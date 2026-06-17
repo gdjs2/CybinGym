@@ -24,7 +24,7 @@ export OPENAI_API_KEY="your-openai-key"
 uv run inspect eval cybingym.py --model openai/gpt-4o-mini
 # You can refer to https://inspect.aisi.org.uk/providers.html for supported models
 ```
-This command will run CybinGym on inspect_ai's `basic_agent()`. You can specify the agent to be evaluate through argument `-T agent_type=basic`. 
+This command will run CybinGym on inspect_ai's [`react()`](https://inspect.aisi.org.uk/react-agent.html) agent. You can specify the agent to be evaluate through argument `-T agent_type=basic`. 
 ```bash
-uv run inspect eval cybingym.py -T agent_type=react --model openai/gpt-4o-mini
+uv run inspect eval cybingym.py -T agent_type=basic --model openai/gpt-4o-mini
 ```
