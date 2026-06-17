@@ -1,0 +1,5 @@
+services:
+  default:
+    build: .
+    # Keeps the container alive so Inspect can execute the agent's bash commands inside it
+    command: tail -f /dev/null
