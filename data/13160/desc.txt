@@ -1,0 +1,1 @@
+A vulnerability in DrawDashPolygon() allows reading beyond the end of the dash pattern array.

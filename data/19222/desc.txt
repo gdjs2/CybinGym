@@ -1,0 +1,1 @@
+A vulnerability exists in coolkey where the code addresses memory behind allocated buffers, potentially leading to out-of-bounds access.

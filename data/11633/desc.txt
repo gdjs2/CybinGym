@@ -1,0 +1,1 @@
+The CDMA2000 code contains improper offset handling, where the pointer to the offset is incremented instead of the offset itself. This leads to incorrect memory access and various related problems in the affected statements.

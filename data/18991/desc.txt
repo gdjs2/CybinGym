@@ -1,0 +1,1 @@
+A misplaced local array on the stack in libhevcdec causes color artifacts in decoded YUV for chroma planes. The array luma_nbr_flags_4x4[] is always allocated at the same address, which preserves values from previous iterations, leading to incorrect behavior.

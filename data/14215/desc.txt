@@ -1,0 +1,1 @@
+A vulnerability exists in WritePDBImage() where the input scanline is not cleared, potentially exposing data due to a decoder bug.

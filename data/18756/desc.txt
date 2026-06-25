@@ -1,0 +1,1 @@
+A vulnerability exists in `mrb_str_modify_keep_ascii` where the `MRB_STR_SHARED` flag is not cleared, potentially leading to unintended string sharing.

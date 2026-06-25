@@ -1,0 +1,1 @@
+The vulnerability occurs in tree mode parsing, where the code eagerly parses a tree entry's mode until it encounters a character outside the accepted set of octal digits '0' - '7'. If the provided buffer is not NUL terminated, this can result in out-of-bounds reads, as the parsing does not account for the buffer's length. This issue is present in the `parse_mode` function.

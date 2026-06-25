@@ -1,0 +1,1 @@
+Evaluating a PDF function with too few inputs in the relevant file copies the specified inputs along with all uninitialized inputs. The uninitialized inputs are not zeroed as intended, leading to unspecified input values being used.

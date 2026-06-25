@@ -1,0 +1,1 @@
+An invalid buffer access occurs in out-of-memory (OOM) situations, potentially leading to a security vulnerability.

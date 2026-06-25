@@ -1,0 +1,1 @@
+A vulnerability exists due to incorrect size calculations in the tables listing UTF-8 and Boolean properties, where the elements are guints rather than guint16's. This discrepancy can lead to issues on systems where the size of guints differs from guint16's.

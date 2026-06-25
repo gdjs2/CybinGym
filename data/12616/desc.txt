@@ -1,0 +1,1 @@
+A vulnerability exists in the DrawPrimitive() function where arithmetic overflow can occur when converting computed coordinates from 'double' to 'long'.

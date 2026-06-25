@@ -1,0 +1,1 @@
+An off-by-one error exists in the output buffer check within the HighPassBand::decode() function of VC5Decompressor.

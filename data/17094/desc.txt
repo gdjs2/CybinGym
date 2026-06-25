@@ -1,0 +1,1 @@
+A vulnerability exists where the outputs of degenerate exponential functions in the code are left uninitialized, which causes issues when these values are used later. This affects the evaluation of exponential functions and can lead to unpredictable behavior.

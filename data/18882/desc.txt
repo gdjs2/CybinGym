@@ -1,0 +1,1 @@
+The patch_parse function in patch_parse.c contains a vulnerability where integer underflow can lead to out-of-bounds reads.

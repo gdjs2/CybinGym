@@ -1,0 +1,1 @@
+A vulnerability exists in the ReadTIFFImage() function where the alpha channel is incorrectly disassociated for images that do not have a photometric value of PHOTOMETRIC_RGB.

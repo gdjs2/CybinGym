@@ -1,0 +1,1 @@
+A vulnerability exists in odp-util where parsing of odp actions does not stop if nlattr is overflowed. The function `encap = nl_msg_start_nested(key, OVS_KEY_ATTR_ENCAP)` ensures that key->size is at least as large as (encap + NLA_HDRLEN), making the subsequent `if` statement safe, but without proper checks, an overflow in nlattr can lead to unsafe parsing behavior.

@@ -1,0 +1,1 @@
+A vulnerability exists in the K7Zip component within the readAndDecodePackedStreams function, where if the inflated size is smaller than unpackSize, crc32 operates on incorrect memory. This can lead to uninitialized memory access or potentially an out-of-bounds memory read, as QByteArray may allocate more memory than requested.

@@ -1,0 +1,1 @@
+A vulnerability exists due to a mixup of skip and pad when unpacking images, caused by a review rebase mistake in c1d0880690bab653b455113e09d6be86fb54de33.

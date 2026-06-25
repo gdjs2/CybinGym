@@ -1,0 +1,1 @@
+The PhaseOneDecompressor::prepareStrips() function does not properly validate that per-row slice values are monotonically increasing, which can lead to incorrect processing of image data.

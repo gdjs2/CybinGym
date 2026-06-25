@@ -3,11 +3,19 @@ import json
 import os
 import tarfile
 import io
+import docker.errors
 
 def main():
     # 1. A list storing all IDs of docker images to be processed
     # Add your actual target IDs to this list
-    IMAGE_IDS = ["11078", "11173", "19013"] 
+    IMAGE_IDS = [
+        1856, 10013, 10055, 10096, 10147, 10252, 10306, 10341, 10400, 10574,
+        10628, 10653, 10710, 10731, 10841, 10863, 10864, 10865, 10882, 10999
+    ]
+
+    arvo_not_working_ids = []
+    our_not_working_ids = []
+    work_ids = []
     
     # Initialize the Docker client
     client = docker.from_env()
@@ -46,7 +54,12 @@ def main():
         print(f"Extracting /tmp/poc from {vul_image_name}...")
         
         # We use create() instead of run() because we only need the container filesystem to copy the file
-        temp_container = client.containers.create(vul_image_name)
+        try:
+            temp_container = client.containers.create(vul_image_name)
+        except docker.errors.ImageNotFound:
+            print(f"Image {vul_image_name} not found locally. Pulling from registry...")
+            client.images.pull(vul_image_name)
+            temp_container = client.containers.create(vul_image_name)
         
         try:
             # get_archive returns a raw tar stream and stats
@@ -80,6 +93,9 @@ def main():
         fix_image_name = f"n132/arvo:{img_id}-fix"
         cmd_step5 = ["/bin/sh", "-c", f"/out/{target_binary} /poc"]
 
+        vul_exit_code = None
+        fix_exit_code = None
+
         for img_name in [vul_image_name, fix_image_name]:
             print(f"\nRunning {img_name}...")
             container = client.containers.run(
@@ -91,6 +107,10 @@ def main():
             result = container.wait()
             print(f"--> [{img_name}] Exit Code: {result['StatusCode']}")
             container.remove()
+            if img_name == vul_image_name:
+                vul_exit_code = result['StatusCode']
+            else:
+                fix_exit_code = result['StatusCode']
 
         # 6. Run merge image and execute both binaries
         merge_image_name = f"lambangaw/cybingym:{img_id}-merge"
@@ -119,6 +139,18 @@ def main():
             # Clean up the merge container
             merge_container.stop()
             merge_container.remove()
+
+        if not (vul_exit_code != 0 and fix_exit_code == 0):
+            arvo_not_working_ids.append(img_id)
+        elif not (exec_vul.exit_code != 0 and exec_fix.exit_code == 0):
+            our_not_working_ids.append(img_id)
+        else:
+            print(f"ID {img_id} is a valid PoC: VUL failed, FIX succeeded.")
+            work_ids.append(img_id)
+    
+    print(f"\nSummary of IDs where Arvo's PoC failed: {arvo_not_working_ids}")
+    print(f"\nSummary of IDs where our PoC failed: {our_not_working_ids}")
+    print(f"\nSummary of valid PoC IDs: {work_ids}")
 
 if __name__ == "__main__":
     main()

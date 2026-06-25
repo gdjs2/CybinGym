@@ -1,0 +1,1 @@
+An out-of-bounds read occurs in the strlen function when processing certain inputs, as demonstrated by clusterfuzz-testcase-minimized-ia_fuzz-5767342952284160.dms.

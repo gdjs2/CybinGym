@@ -1,0 +1,1 @@
+A vulnerability exists in ReadMNGImage() where the image is magnified even if the requested magnification methods are not supported.
