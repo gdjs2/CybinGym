@@ -1,0 +1,25 @@
+ARG BASE_IMAGE=ubuntu:16.04
+
+FROM ${BASE_IMAGE}
+
+RUN sed -i 's/^mesg n.*/if tty -s; then mesg n; fi/g' /root/.profile || true
+
+# Install basic reverse engineering and scripting tools for the agent
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    build-essential \
+    gdb \
+    binutils \
+    file \
+    strace \
+    curl \
+    unzip \
+    ca-certificates \
+    vim-common \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /CybinGym_workdir
+
+# Inspect automatically sets the working directory and mounts the files

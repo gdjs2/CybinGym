@@ -3,24 +3,28 @@ import os
 import sys
 
 # Ensure the user provided the output filename as an argument
-if len(sys.argv) < 2:
-    print("Error: Missing output filename.")
-    print("Usage: python generate_json.py <output_filename.json>")
+if len(sys.argv) < 3:
+    print("Usage: python generate_json.py <data_directory> <output_filename.json>")
     sys.exit(1)
 
-# Get the filename from the first command line argument
-output_file = sys.argv[1]
+# Get the data directory from the first command line argument
+data_directory = sys.argv[1]
+# Get the output filename from the second command line argument
+output_file = sys.argv[2]
 
 # Your list of IDs
 ids = [
-    1856, 10013, 10055, 10096, 10147, 10252, 10306, 10341, 10400, 10574,
-    10628, 10653, 10710, 10731, 10841, 10863, 10864, 10865, 10882, 10999
+    name for name in os.listdir(data_directory) if os.path.isdir(os.path.join(data_directory, name))
 ]
+
+ids.sort()
 
 json_data = []
 
+input = """Read the system prompt carefully and follow the instructions to perform the binary analysis and PoC generation task. """
+
 for idx in ids:
-    target_file_path = f"./data/{idx}/target.txt"
+    target_file_path = f"{data_directory}/{idx}/target.txt"
     
     if os.path.exists(target_file_path):
         with open(target_file_path, "r", encoding="utf-8") as f:
@@ -32,7 +36,7 @@ for idx in ids:
     # Build the schema for the current ID
     item = {
         "id": idx,
-        "input": "Follow the system prompt.",
+        "input": input,
         "target": "poc",
         "metadata": {
             "analysis_image": f"lambangaw/cybingym:{idx}-merge",
@@ -41,7 +45,7 @@ for idx in ids:
             "target_binary": target_binary
         },
         "files": {
-            "desc.txt": f"data/{idx}/desc.txt"
+            "desc.txt": f"{data_directory}/{idx}/desc.txt"
         }
     }
     json_data.append(item)

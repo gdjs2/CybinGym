@@ -1,13 +1,9 @@
-ARG BASE_IMAGE=ubuntu:16.04
+ARG TARGET_BASE_IMAGE=ubuntu:16.04
 
-FROM ${BASE_IMAGE}
-
-RUN sed -i 's/^mesg n.*/if tty -s; then mesg n; fi/g' /root/.profile || true
+FROM python:3.13-slim
 
 # Install basic reverse engineering and scripting tools for the agent
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
     build-essential \
     gdb \
     binutils \
@@ -18,23 +14,13 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     vim-common \
     git \
+    openjdk-21-jdk \
     && rm -rf /var/lib/apt/lists/*
 
-ENV JAVA_HOME=/opt/java/openjdk
-
 RUN set -eux; \
-    arch="$(dpkg --print-architecture)"; \
-    case "$arch" in \
-        amd64) jdk_arch='x64' ;; \
-        arm64) jdk_arch='aarch64' ;; \
-        *) echo "Unsupported architecture: $arch" >&2; exit 1 ;; \
-    esac; \
-    JDK_URL="https://api.adoptium.net/v3/binary/latest/21/ga/linux/${jdk_arch}/jdk/hotspot/normal/eclipse"; \
-    mkdir -p /opt/java; \
-    curl -fsSL "$JDK_URL" -o /tmp/jdk21.tar.gz; \
-    tar -xzf /tmp/jdk21.tar.gz -C /opt/java; \
-    rm -f /tmp/jdk21.tar.gz; \
-    mv /opt/java/jdk-* "$JAVA_HOME"
+    git clone https://github.com/radareorg/radare2 /opt/radare2 \
+    && cd /opt/radare2 \
+    && ./sys/install.sh
 
 # Download and install Ghidra 12.1.2 to /opt
 RUN set -eux; \
@@ -46,6 +32,9 @@ RUN set -eux; \
 WORKDIR /CybinGym_workdir
 
 # Expose Ghidra headless tools (e.g., analyzeHeadless) on PATH
-ENV PATH="${JAVA_HOME}/bin:/opt/ghidra_12.1.2_PUBLIC/support:${PATH}"
+ENV PATH="/opt/ghidra_12.1.2_PUBLIC/support:${PATH}"
+
+COPY --from=${TARGET_BASE_IMAGE} /out-vul /out-vul
+COPY --from=${TARGET_BASE_IMAGE} /out-fix /out-fix
 
 # Inspect automatically sets the working directory and mounts the files

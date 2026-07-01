@@ -465,6 +465,7 @@ dependencies = [
     { name = "anthropic" },
     { name = "docker" },
     { name = "inspect-ai" },
+    { name = "inspect-swe" },
     { name = "openai" },
     { name = "openai-agents" },
 ]
@@ -474,6 +475,7 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.111.0" },
     { name = "docker", specifier = ">=7.1.0" },
     { name = "inspect-ai", specifier = ">=0.3.240" },
+    { name = "inspect-swe", specifier = ">=0.2.63" },
     { name = "openai", specifier = ">=2.42.0" },
     { name = "openai-agents", specifier = ">=0.17.5" },
 ]
@@ -743,7 +745,7 @@ wheels = [
 
 [[package]]
 name = "inspect-ai"
-version = "0.3.240"
+version = "0.3.242"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "agent-client-protocol" },
@@ -786,9 +788,30 @@ dependencies = [
     { name = "zipp" },
     { name = "zstandard" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5d/74/59d732f7f25fc8cfd7914dfa9831b7ae6ece4c3e06254caee9a4d9889261/inspect_ai-0.3.240.tar.gz", hash = "sha256:8a0bb8ba1fd73a86b106eed7ea9c32eecb9a856f9ae2dcd08d94385801a5bcb3", size = 46723848, upload-time = "2026-06-15T18:39:15.497Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/83/69/fea1eca5fe1113478d3821686f58f21871a41b94cc3acc952435c44a6250/inspect_ai-0.3.242.tar.gz", hash = "sha256:896e6fd2f5edc9c786c06351441f73c7b9ebdef6fcde23453b45c5704822cbfa", size = 49111466, upload-time = "2026-06-29T14:58:33.864Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/70/23/0b3b7bdae6641cd447f11c2cf1d1dbc9819fcc1a67b454734da34e7ac18c/inspect_ai-0.3.240-py3-none-any.whl", hash = "sha256:f366d012800d6d96e25b5a46c13fef5a20f7e8ee48e8d609db899b706599ed8c", size = 33940870, upload-time = "2026-06-15T18:39:02.988Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/7a/ee4cc9f6150473c4678059a2968f87d8400e754dde5569ed3d68f92c0b4c/inspect_ai-0.3.242-py3-none-any.whl", hash = "sha256:ca9b67d7ac618805ac3378ad778f2a18e9bf747b4e84954a38fe6db776e01a5a", size = 36770867, upload-time = "2026-06-29T14:58:26.226Z" },
+]
+
+[[package]]
+name = "inspect-swe"
+version = "0.2.63"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "agent-client-protocol" },
+    { name = "anyio" },
+    { name = "httpx" },
+    { name = "inspect-ai" },
+    { name = "nest-asyncio" },
+    { name = "platformdirs" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2a/0c/67e3b2eb35f170754f1f07d3834dcdfd21d4c16c76635ae72f052ab284c1/inspect_swe-0.2.63.tar.gz", hash = "sha256:6aa47f9d5da3f2139637a51662f7698b42645b1c70a61019585091c60501fa48", size = 94331, upload-time = "2026-06-10T17:37:35.333Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ab/eb/0d9e81becac3bf98279f5172af13fa6ae7377fbed9a266a9e892f7bb9906/inspect_swe-0.2.63-py3-none-any.whl", hash = "sha256:9c34cf572a0aaee6fdbad23eccb1ea4c5b57d9e650e8a282db691cd63c965f61", size = 126922, upload-time = "2026-06-10T17:37:33.769Z" },
 ]
 
 [[package]]
@@ -1152,6 +1175,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0c/f7/addf1087b860ac60e6f382240f64fb99f8bfb532bb06f7c542b83c29ca61/multidict-6.7.1-cp314-cp314t-win_amd64.whl", hash = "sha256:497bde6223c212ba11d462853cfa4f0ae6ef97465033e7dc9940cdb3ab5b48e5", size = 53542, upload-time = "2026-01-26T02:46:08.809Z" },
     { url = "https://files.pythonhosted.org/packages/4c/81/4629d0aa32302ef7b2ec65c75a728cc5ff4fa410c50096174c1632e70b3e/multidict-6.7.1-cp314-cp314t-win_arm64.whl", hash = "sha256:2bbd113e0d4af5db41d5ebfe9ccaff89de2120578164f86a5d17d5a576d1e5b2", size = 44719, upload-time = "2026-01-26T02:46:11.146Z" },
     { url = "https://files.pythonhosted.org/packages/81/08/7036c080d7117f28a4af526d794aab6a84463126db031b007717c1a6676e/multidict-6.7.1-py3-none-any.whl", hash = "sha256:55d97cc6dae627efa6a6e548885712d4864b81110ac76fa4e534c03819fa4a56", size = 12319, upload-time = "2026-01-26T02:46:44.004Z" },
+]
+
+[[package]]
+name = "nest-asyncio"
+version = "1.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/83/f8/51569ac65d696c8ecbee95938f89d4abf00f47d58d48f6fbabfe8f0baefe/nest_asyncio-1.6.0.tar.gz", hash = "sha256:6f172d5449aca15afd6c646851f4e31e02c598d553a667e38cafa997cfec55fe", size = 7418, upload-time = "2024-01-21T14:25:19.227Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl", hash = "sha256:87af6efd6b5e897c81050477ef65c62e2b2f35d51703cae01aff2905b1852e1c", size = 5195, upload-time = "2024-01-21T14:25:17.223Z" },
 ]
 
 [[package]]

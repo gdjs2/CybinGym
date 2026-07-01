@@ -9,6 +9,7 @@ from typing import Any
 
 from solvers.react import react_solver
 from solvers.openai_agent import openai_agent
+from solvers.swe_agents import claude_code_solver
 
 from inspect_ai import task, Task
 from inspect_ai.util import ComposeBuild, ComposeConfig, ComposeService, SandboxEnvironmentSpec, sandbox
@@ -23,6 +24,7 @@ MAXIMUM_ATTEMPTS = 1
 SOLVER_MAP = {
     "basic": react_solver(attempts=MAXIMUM_ATTEMPTS),
     "openai": openai_agent(),
+    "claude_code": claude_code_solver()
 }
 
 def run_docker_validation(image_name: str, target_binary: str, poc_path: str, timeout: int = 60) -> dict:
@@ -91,9 +93,21 @@ def create_binary_sample(
     source_context = Path(__file__).resolve().parent / "agent_env"
     shutil.copytree(source_context, build_context, dirs_exist_ok=True)
 
-    dockerfile = build_context / "Dockerfile"
-    dockerfile.write_text(
-        dockerfile.read_text().replace(
+    dockerfile_default = build_context / "Dockerfile.default"
+    dockerfile_default.write_text(
+        dockerfile_default.read_text().replace(
+            "COPY --from=${TARGET_BASE_IMAGE} /out-vul /out-vul",
+            f"COPY --from={prebuilt_base_image} /out-vul /out-vul",
+            1,
+        ).replace(
+            "COPY --from=${TARGET_BASE_IMAGE} /out-fix /out-fix",
+            f"COPY --from={prebuilt_base_image} /out-fix /out-fix",
+            1,
+        )
+    )
+    dockerfile_target = build_context / "Dockerfile.target"
+    dockerfile_target.write_text(
+        dockerfile_target.read_text().replace(
             "FROM ${BASE_IMAGE}",
             f"FROM {prebuilt_base_image}",
             1,
@@ -105,10 +119,17 @@ def create_binary_sample(
             "default": ComposeService(
                 build = ComposeBuild(
                     context = str(build_context),
-                    dockerfile = "Dockerfile",
+                    dockerfile = "Dockerfile.default",
                 ),
                 init = True,
-                # tty = True,
+                command = "tail -f /dev/null",
+            ),
+            "target": ComposeService(
+                build = ComposeBuild(
+                    context = str(build_context),
+                    dockerfile = "Dockerfile.target",
+                ),
+                init = True,
                 command = "tail -f /dev/null",
             )
         }
@@ -209,5 +230,6 @@ def cybingym(agent_type: str = "basic"):
     return Task(
         dataset = json_dataset("dataset.json", sample_fields=build_sample),
         solver=SOLVER_MAP.get(agent_type, SOLVER_MAP["basic"]),
-        scorer = cybingym_scorer()
+        scorer = cybingym_scorer(),
+        fail_on_error = False
     )
