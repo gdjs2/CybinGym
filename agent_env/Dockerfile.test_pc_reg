@@ -1,0 +1,11 @@
+ARG BASE_IMAGE=ubuntu:16.04
+
+FROM ${BASE_IMAGE}
+
+RUN sed -i 's/^mesg n.*/if tty -s; then mesg n; fi/g' /root/.profile || true
+
+RUN apt-get update && apt-get install -y \
+    gdb \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /CubinGym_workdir

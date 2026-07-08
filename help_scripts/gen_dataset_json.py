@@ -42,7 +42,9 @@ for idx in ids:
             "analysis_image": f"lambangaw/cybingym:{idx}-merge",
             "valid_image_vul": f"n132/arvo:{idx}-vul",
             "valid_image_fix": f"n132/arvo:{idx}-fix",
-            "target_binary": target_binary
+            "target_binary": target_binary,
+            "exploit_dockerfile_path": f"agent_env/",
+            "exploit_dockerfile": f"Dockerfile.test_pc_reg"
         },
         "files": {
             "desc.txt": f"{data_directory}/{idx}/desc.txt"

@@ -1,0 +1,32 @@
+FROM ubuntu:24.04
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update package lists and install build tools and gdb
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gdb \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a build directory
+WORKDIR /build
+
+# Write the C++ source code directly into main.cpp using legacy-safe echo commands
+RUN echo '#include <iostream>' > main.cpp && \
+    echo '#include <cstdint>' >> main.cpp && \
+    echo 'int main(int argc, char* argv[]) {' >> main.cpp && \
+    echo '    std::cout << "[*] Preparing to jump to 0xdeadbeef..." << std::endl;' >> main.cpp && \
+    echo '    uintptr_t target = 0xdeadbeef;' >> main.cpp && \
+    echo '    void (*jump_to_deadbeef)() = reinterpret_cast<void(*)()>(target);' >> main.cpp && \
+    echo '    jump_to_deadbeef();' >> main.cpp && \
+    echo '    return 0;' >> main.cpp && \
+    echo '}' >> main.cpp
+
+# Compile the C++ program to /tmp
+# -g enables debug symbols, -O0 disables optimizations
+RUN mkdir /out \
+    && g++ -g -O0 main.cpp -o /out/test_prg
+
+# Switch to /tmp where the compiled binary lives
+WORKDIR /tmp
