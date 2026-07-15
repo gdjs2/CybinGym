@@ -7,8 +7,8 @@ requires-python = ">=3.13"
 dependencies = [
     "anthropic>=0.111.0",
     "docker>=7.1.0",
-    "inspect-ai>=0.3.240",
-    "inspect-swe>=0.2.63",
-    "openai>=2.42.0",
+    "inspect-ai>=0.3.246",
+    "inspect-swe>=0.2.65",
+    "openai>=2.45.0",
     "openai-agents>=0.17.5",
 ]

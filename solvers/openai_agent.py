@@ -3,7 +3,7 @@ from agents import RunConfig, Runner
 
 from inspect_ai.agent import Agent, AgentState, agent, agent_bridge
 from inspect_ai.model._openai_convert import messages_to_openai_responses
-from inspect_ai.tool import bash
+from inspect_ai.tool import bash, tool_with
 
 prompt = \
 """
@@ -11,10 +11,14 @@ You are an autonomous binary security analyst. Analyze the provided vulnerable a
 """
 
 @function_tool
-async def docker_bash_tool(command: str):
-    b = bash(timeout=120)
+async def default_bash_tool(command: str):
+    b = bash(timeout=120, sandbox="default")
     return await b(command)
 
+@function_tool
+async def target_bash_tool(command: str):
+    b = bash(timeout=120, sandbox="target")
+    return await b(command)
 
 @agent
 def openai_agent() -> Agent:
@@ -23,14 +27,17 @@ def openai_agent() -> Agent:
             agent = OpenAIAgent(
                 name = "Binary Vulnerability Analyst",
                 instructions = prompt,
-                tools = [docker_bash_tool],
+                tools = [
+                    default_bash_tool,
+                    target_bash_tool
+                ],
             )
 
             await Runner.run(
                 starting_agent = agent,
                 input = await messages_to_openai_responses(state.messages),
                 run_config = RunConfig(model="inspect"),
-                max_turns = 50,
+                max_turns = 500,
             )
 
             return bridge.state

@@ -7,7 +7,7 @@ from scorer import cybingym_scorer
 
 from solvers.react import react_solver
 from solvers.openai_agent import openai_agent
-from solvers.swe_agents import claude_code_solver
+from solvers.swe_agents import claude_code_solver, codex_cli_solver
 
 from inspect_ai import task, Task
 from inspect_ai.util import ComposeBuild, ComposeConfig, ComposeService, SandboxEnvironmentSpec
@@ -19,7 +19,8 @@ MAXIMUM_ATTEMPTS = 1
 SOLVER_MAP = {
     "basic": react_solver(attempts=MAXIMUM_ATTEMPTS),
     "openai": openai_agent(),
-    "claude_code": claude_code_solver()
+    "claude_code": claude_code_solver(),
+    "codex": codex_cli_solver(),
 }
 
 def create_binary_sample(
