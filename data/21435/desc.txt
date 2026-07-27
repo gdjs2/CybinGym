@@ -1,0 +1,1 @@
+A buffer overflow occurs when reading old JPEG TIFF format, potentially due to the depth being less than 8.

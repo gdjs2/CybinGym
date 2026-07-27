@@ -1,0 +1,1 @@
+A vulnerability exists in the JSON decoding process in core, where the decoder can incorrectly jump to the end of an object.

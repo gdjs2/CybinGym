@@ -1,0 +1,1 @@
+A vulnerability exists in the authentic module where memory regions can overlap when handling paths longer than 2B, due to the use of an unsafe memory copy operation.

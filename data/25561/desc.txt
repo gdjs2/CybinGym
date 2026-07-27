@@ -1,0 +1,1 @@
+The SF_INFO structure in sndfile allows excessively large values for `samplerate` and `channels`, which can lead to incorrect behavior and possible integer overflows. The API documentation does not clearly specify the valid ranges for these fields.

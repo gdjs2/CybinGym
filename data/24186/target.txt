@@ -1,0 +1,1 @@
+stb_png_read_fuzzer

@@ -1,0 +1,1 @@
+An out-of-bounds read occurs in the ucl_parse_value function in cases where a string ends with a Multiline terminator without a newline. The function attempts to read the next character to check for a newline without verifying if the pointer is past the end of the buffer.

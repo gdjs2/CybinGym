@@ -1,0 +1,1 @@
+A use-after-free vulnerability exists when XIncluding text from Reader. The XML Reader can free text nodes coming from the XInclude engine before parsing has finished, leading to potential use after free issues if the included node is accessed after being freed.

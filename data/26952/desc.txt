@@ -1,0 +1,1 @@
+A vulnerability exists in the rtps dissector where wmem_allocated memory is stored in pinfo->private_table, which is created with free functions (g_free) that are incompatible with wmem allocations. This can lead to memory management issues due to the collision between g_free and wmem allocations.

@@ -1,0 +1,1 @@
+In the ALAC implementation, disabling the release check from the original code allows `channelIndex` to increase without bounds, which can lead to writing past the end of the output buffer.

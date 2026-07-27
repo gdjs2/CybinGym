@@ -1,0 +1,1 @@
+A buffer overrun occurs in the energy-scan feature when receiving energy results.

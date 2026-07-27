@@ -1,0 +1,1 @@
+The use of "<?=" as a semi-reserved identifier in PHP code allows constructs like "use x as y; echo as my_echo;", which internally translates to invalid token sequences. This causes a crash because the "echo" token does not have attached identifier metadata. The vulnerability occurs due to the lack of proper rejection of "<?=" as an identifier inside zend_lex_tstring.

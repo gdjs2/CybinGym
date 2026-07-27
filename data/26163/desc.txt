@@ -1,0 +1,1 @@
+A vulnerability exists in the function fp_read_radix_16() where the write index is incorrectly updated during multiple writes into a word. If the last word is full and there is no more data to write, the index may be incremented unnecessarily, leading to an off-by-one error in the used value of mp_digit. This can result in an out-of-bounds read.

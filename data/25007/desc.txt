@@ -1,0 +1,1 @@
+A vulnerability exists in the btle code where the acl_data variable is not initialised, which can lead to a wild pointer dereference.

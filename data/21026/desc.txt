@@ -1,0 +1,1 @@
+The TupleVarHeader structure in the gvar module does not ensure it has the required size, which can lead to a security vulnerability.

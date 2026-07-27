@@ -1,0 +1,1 @@
+A vulnerability exists in the JSON handling code where the maximum recursion depth is not checked in all necessary places, potentially allowing excessive recursion.

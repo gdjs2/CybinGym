@@ -1,0 +1,1 @@
+The nested data removal process does not use the GC stack, which can lead to stack overflow. Additionally, the temporary GC buffer provided for get_gc handlers may get reused if the scan is performed recursively instead of being indirected via the GC stack.

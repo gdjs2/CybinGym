@@ -1,0 +1,1 @@
+The xi:fallback processing in the code does not properly fix up namespaces when fallback children are not copied, which can lead to use-after-free errors.

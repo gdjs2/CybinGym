@@ -1,0 +1,1 @@
+The dewarp_fuzzer triggers use of uninitialized value in the genPathname function due to improper argument checking in getFilenamesInDirectory() and requesting debug output during fuzzing.

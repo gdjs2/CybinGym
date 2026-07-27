@@ -1,0 +1,1 @@
+A vulnerability exists in which file_strncmp is called without an upper bound, allowing it to read past the intended buffer when the string is not NUL terminated.

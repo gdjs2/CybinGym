@@ -1,0 +1,1 @@
+A heap-buffer-overflow occurs in the function pixReadFromTiffStream due to an insufficient scanline buffer when reading gray+alpha images and converting them to RGBA.

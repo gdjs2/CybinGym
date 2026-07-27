@@ -1,0 +1,1 @@
+A buffer overrun occurs in the pe_parse_debug_directory function.

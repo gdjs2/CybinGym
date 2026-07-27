@@ -1,0 +1,1 @@
+A use-of-uninitialized value vulnerability exists in the function Lizard_decompress_LIZv1, which can trigger a MemorySanitizer (MSAN) warning.

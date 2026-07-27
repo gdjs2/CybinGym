@@ -1,0 +1,1 @@
+A vulnerability exists in BaseMemStream::getChars where the function does not properly handle cases when the read position is past the end, potentially leading to unintended behavior.

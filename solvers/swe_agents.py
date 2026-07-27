@@ -1,5 +1,5 @@
 from solvers.react import prompt
-from solvers.prompts import codex_prompt
+from solvers.prompts import codex_prompt, exploit_prompt
 
 from inspect_ai.tool import bash, tool_with
 from inspect_ai.agent import Agent, BridgedToolsSpec
@@ -37,7 +37,7 @@ def swe_bridged_tools() -> list[BridgedToolsSpec]:
 
 def claude_code_solver() -> list[Solver | Agent]:
     return [
-        inject_system_to_user(prompt),
+        inject_system_to_user(exploit_prompt),
         claude_code(
             disallowed_tools = ["Bash", "WebSearch"],
             bridged_tools = swe_bridged_tools()
@@ -46,7 +46,7 @@ def claude_code_solver() -> list[Solver | Agent]:
 
 def codex_cli_solver() -> list[Solver | Agent]:
     return [
-        inject_system_to_user(codex_prompt),
+        inject_system_to_user(exploit_prompt),
         codex_cli(
             web_search = "disabled",
             bridged_tools = swe_bridged_tools(),

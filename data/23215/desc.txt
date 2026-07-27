@@ -1,0 +1,1 @@
+The vulnerability allows memory access after encountering zero-length tags in the piv code, potentially leading to undefined behavior.

@@ -1,0 +1,1 @@
+The old jpeg format support in tiff is only implemented for 8 bpp and causes issues such as double frees when using TIFFCleanup().

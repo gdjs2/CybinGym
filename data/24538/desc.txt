@@ -1,0 +1,1 @@
+A vulnerability exists where the code does not correctly handle cases with excessively long GPG S2K card serial numbers.

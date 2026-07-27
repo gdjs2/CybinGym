@@ -1,0 +1,1 @@
+A buffer overread occurs in the ndpi_search_setup_capwap function.

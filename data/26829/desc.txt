@@ -1,0 +1,1 @@
+A crash occurs in the C++ implementation when processing an invalid Parquet file, due to improper handling of malformed input. This issue may also involve unnecessary memory allocation.

@@ -1,0 +1,1 @@
+A bounds check issue exists in the strptime function, which can lead to a security vulnerability.

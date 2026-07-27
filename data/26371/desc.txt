@@ -1,0 +1,1 @@
+A heap overflow exists in coap_pdu_parse_opt() in pdu.c due to coap_opt_length() not being called with next_option_safe(), which allows out-of-bound reads for malformed options.

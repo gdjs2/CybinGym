@@ -1,0 +1,1 @@
+A vulnerability exists in tcos where reading behind the end of an allocated buffer can occur.

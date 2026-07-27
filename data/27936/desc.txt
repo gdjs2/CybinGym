@@ -1,0 +1,1 @@
+An uninitialized read occurs in decompress_smooth_data() when cinfo->output_iMCU_row is greater than cinfo->master->last_good_iMCU_row and cinfo->input_scan_number equals 1, causing the function to read from prev_coef_bits_latch[], which is uninitialized.

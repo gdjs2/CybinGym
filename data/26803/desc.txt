@@ -1,0 +1,1 @@
+A vulnerability exists in ms_adpcm where size checks use 'blockalign' (the size of a block) instead of 'samplesperblock', even though each block contains 7 samples per channel as part of the preamble. There is also a missing check to ensure that the block is large enough to hold the number of samples it claims to contain. This can lead to incorrect processing of audio data.

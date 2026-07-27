@@ -1,0 +1,1 @@
+A double free occurs in xmlTextReaderRead when processing an XInclude with an empty fallback in the XML reader.

@@ -1,0 +1,1 @@
+A stack-use-after-scope vulnerability exists in coolkey, where memory on the stack is accessed after its lifetime has ended.

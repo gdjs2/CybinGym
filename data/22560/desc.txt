@@ -1,0 +1,1 @@
+The WebP encoder in TIFF only supports 8 bits per sample, leading to a security vulnerability when handling images with other bit depths.

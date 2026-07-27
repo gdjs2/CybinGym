@@ -1,0 +1,1 @@
+A use-of-uninitialized memory vulnerability exists in the tinfl_decompress function in miniz when handling an invalid dist value.

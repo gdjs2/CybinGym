@@ -1,0 +1,1 @@
+The HTML parser exhibits a quadratic runtime vulnerability due to the removal of an important optimization that avoids repeatedly scanning the input buffer for terminating characters. This issue arises in the HTML push parser, where ctxt->checkIndex is not always written and parser state is not properly managed, leading to inefficient processing.

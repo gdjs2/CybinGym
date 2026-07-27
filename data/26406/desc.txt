@@ -1,0 +1,1 @@
+A use-of-uninitialized value vulnerability exists in miniz when copying dist bytes, which can lead to undefined behavior.

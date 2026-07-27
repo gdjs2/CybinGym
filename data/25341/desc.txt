@@ -1,0 +1,1 @@
+MDLMaterialLoader contains a vulnerability where some allocations might underallocate due to integer overflows. If the allocation size does not fit in an unsigned int, this can lead to incorrect memory allocation.

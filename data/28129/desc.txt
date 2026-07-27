@@ -1,0 +1,1 @@
+A vulnerability exists where the code uses scope when validating Attribute, which is unsafe at this point and can lead to inconsistencies due to a partially compiled class.

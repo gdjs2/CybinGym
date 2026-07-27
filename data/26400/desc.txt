@@ -1,0 +1,1 @@
+A vulnerability exists where converting symbols into strings does not check for the first `0`, which causes a segmentation fault (SIGSEGV) when `mruby -v` displays an unnamed variable. This can be triggered, for example, by running `bin/mruby -ve 'call { |(a, b)| }'`, resulting in a crash when displaying local variable names.

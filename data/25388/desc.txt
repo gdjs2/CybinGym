@@ -1,0 +1,1 @@
+A possible heap buffer overflow occurs during parsing of kbx blob.

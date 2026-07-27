@@ -1,0 +1,1 @@
+A heap buffer overflow occurs in the code when there is not enough space to write the compressed block size.
