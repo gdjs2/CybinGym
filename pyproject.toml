@@ -12,3 +12,11 @@ dependencies = [
     "openai>=2.45.0",
     "openai-agents>=0.17.5",
 ]
+
+[project.optional-dependencies]
+opensage = [
+    "datasets>=4.0.0",
+    "fire>=0.7.0",
+    "google-adk<=1.25.1",
+    "mcp>=1.0.0",
+]
