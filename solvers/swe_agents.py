@@ -50,6 +50,5 @@ def codex_cli_solver() -> list[Solver | Agent]:
         codex_cli(
             web_search = "disabled",
             bridged_tools = swe_bridged_tools(),
-            model_config = "gpt-5.5"
         )
     ]

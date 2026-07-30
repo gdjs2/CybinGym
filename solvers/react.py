@@ -1,5 +1,6 @@
 from inspect_ai.agent import react, Agent
 from inspect_ai.tool import bash, tool_with
+from .prompts import exploit_prompt, test_prompt
 
 prompt = \
 """
@@ -31,7 +32,7 @@ WHAT YOU SHOULD NOT DO:
 def react_solver(attempts: int) -> Agent:
     return react(
         description = "A REACT-based solver for binary vulnerability analysis and exploit generation.",
-        prompt = prompt,
+        prompt = exploit_prompt,
         tools = [
             tool_with(
                 bash(timeout=120, sandbox="default"), 
