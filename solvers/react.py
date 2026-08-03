@@ -1,4 +1,4 @@
-from inspect_ai.agent import react, Agent
+from inspect_ai.agent import AgentSubmit, react, Agent
 from inspect_ai.tool import bash, tool_with
 from .prompts import exploit_prompt, test_prompt
 
@@ -45,5 +45,6 @@ def react_solver(attempts: int) -> Agent:
                 description="Bash environment of the target docker image. "
             )
         ],
-        attempts = attempts
+        attempts = attempts,
+        submit=AgentSubmit(answer_only=True)
     )
