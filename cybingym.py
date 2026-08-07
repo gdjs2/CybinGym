@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 import shutil
 import sys
 import tempfile
@@ -177,6 +178,19 @@ def create_binary_sample(
             1,
         )
     )
+    flag = secrets.token_hex(32)
+    dockerfile_victim = build_context / "Dockerfile.victim"
+    dockerfile_victim.write_text(
+        dockerfile_victim.read_text().replace(
+            "FROM ${BASE_IMAGE}",
+            f"FROM {prebuilt_base_image}",
+            1,
+        ).replace(
+            "${CYBINGYM_FLAG}",
+            f"flag{{{flag}}}",
+            1,
+        )
+    )
 
     config = ComposeConfig(
         services={
@@ -196,13 +210,20 @@ def create_binary_sample(
                 init=True,
                 command="tail -f /dev/null",
             ),
+            "victim": ComposeService(
+                build=ComposeBuild(
+                    context=str(build_context),
+                    dockerfile="Dockerfile.victim",
+                ),
+                init=True,
+            ),
         }
     )
 
     return Sample(
         id=sample_id,
         input=prompt,
-        target=target,
+        target=flag,
         metadata=metadata,
         sandbox=SandboxEnvironmentSpec(type="docker", config=config),
         files=files,
@@ -215,7 +236,9 @@ def create_poc_handoff_sample(
     sample_id: str | int | None = None,
     target: str | list[str] = "",
     metadata: dict[str, Any] | None = None,
+    files: dict[str, str] | None = None,
 ) -> Sample:
+    flag = secrets.token_hex(32)
     config = ComposeConfig(
         services={
             "default": ComposeService(
@@ -230,8 +253,8 @@ def create_poc_handoff_sample(
     return Sample(
         id=sample_id,
         input=prompt,
-        target=target,
-        metadata=metadata,
+        target=flag,
+        metadata={**(metadata or {}), "_cybingym_files": files or {}},
         sandbox=SandboxEnvironmentSpec(type="docker", config=config),
     )
 
@@ -276,6 +299,7 @@ def cybingym(
                 sample_id=record.get("id"),
                 target=record.get("target", ""),
                 metadata=metadata,
+                files=record.get("files"),
             )
 
         return create_binary_sample(

@@ -4,6 +4,10 @@ DEFAULT_IMAGE = "${DEFAULT_IMAGE}"
 PATCHED_IMAGE = "${PATCHED_IMAGE}"
 PWN_TOOLS_BASE_IMAGE = "${PWN_TOOLS_BASE_IMAGE}"
 PWN_TOOLS_DOCKERFILE = "${PWN_TOOLS_DOCKERFILE}"
+VICTIM_DOCKERFILE = "${VICTIM_DOCKERFILE}"
+GDB_MCP_DOCKERFILE = "${GDB_MCP_DOCKERFILE}"
+CYBINGYM_FLAG = "${CYBINGYM_FLAG}"
+DOCKER_NETWORK = "${DOCKER_NETWORK}"
 TASK_NAME = "${TASK_NAME}"
 GDB_PORT = ${GDB_PORT}
 IDA_PRO_MCP_PORT = ${IDA_PRO_MCP_PORT}
@@ -27,6 +31,7 @@ mount_host_paths = []
 [sandbox.sandboxes.main]
 image = "${DEFAULT_IMAGE}"
 timeout = 300
+network = "${DOCKER_NETWORK}"
 [sandbox.sandboxes.main.environment]
 CYBERGYM_TARGET_BINARY = "${CYBERGYM_TARGET_BINARY}"
 [sandbox.sandboxes.main.extra]
@@ -36,6 +41,7 @@ initializer_timeout_sec = 1800
 image = "${TASK_NAME}_pwn_tools"
 absolute_dockerfile_path = "${PWN_TOOLS_DOCKERFILE}"
 timeout = 600
+network = "${DOCKER_NETWORK}"
 mcp_services = ["ida_pro_mcp", "pyghidra_mcp"]
 volumes = ["/var/run/docker.sock:/var/run/docker.sock:rw"]
 [sandbox.sandboxes.pwn_tools.build_args]
@@ -51,9 +57,10 @@ CYBERGYM_TARGET_BINARY = "${CYBERGYM_TARGET_BINARY}"
 initializer_timeout_sec = 1800
 
 [sandbox.sandboxes.gdb_mcp]
-image = "${TASK_NAME}_gdb_mcp"
-project_relative_dockerfile_path = "src/opensage/templates/dockerfiles/gdb_mcp/Dockerfile"
+image = "${TASK_NAME}_gdb_mcp_local"
+absolute_dockerfile_path = "${GDB_MCP_DOCKERFILE}"
 command = ""
+network = "${DOCKER_NETWORK}"
 mcp_services = ["gdb_mcp"]
 [sandbox.sandboxes.gdb_mcp.build_args]
 BASE_IMAGE = "${DEFAULT_IMAGE}"
@@ -64,11 +71,30 @@ CYBERGYM_TARGET_BINARY = "${CYBERGYM_TARGET_BINARY}"
 [sandbox.sandboxes.gdb_mcp.extra]
 initializer_timeout_sec = 1800
 
+[sandbox.sandboxes.victim]
+image = "${TASK_NAME}_victim"
+absolute_dockerfile_path = "${VICTIM_DOCKERFILE}"
+command = ""
+timeout = 300
+[sandbox.sandboxes.victim.build_args]
+BASE_IMAGE = "${DEFAULT_IMAGE}"
+CYBINGYM_FLAG = "${CYBINGYM_FLAG}"
+[sandbox.sandboxes.victim.environment]
+CYBERGYM_TARGET_BINARY = "${CYBERGYM_TARGET_BINARY}"
+CYBINGYM_PORT = "33333"
+[sandbox.sandboxes.victim.extra]
+initializer_timeout_sec = 1800
+
 [llm]
 [llm.model_configs.main]
 model_name = "${MAIN_MODEL}"
 temperature = 0.2
 max_tokens = 4096
+
+[model]
+models_python_file = "models.py"
+evaluation_replace_all_models_with_model_name = "${MAIN_MODEL}"
+budget = 0.0
 
 [history]
 max_tool_response_length = 20000

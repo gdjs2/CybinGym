@@ -173,8 +173,57 @@ _OPENSAGE_CONTAINER_PREFIXES = (
     "opensage_main_",
     "opensage_pwn_tools_",
     "opensage_gdb_mcp_",
+    "opensage_victim_",
     "opensage_placeholder_",
 )
+_FLAG_RE = re.compile(r"flag\{([^{}]+)\}")
+
+
+def _extract_submitted_flag(text: str) -> str:
+    match = _FLAG_RE.search(text or "")
+    return match.group(0) if match else ""
+
+
+def _read_opensage_summary(output_dir: Path) -> dict[str, Any]:
+    summary_path = output_dir / "cybingym_result.json"
+    if not summary_path.exists():
+        return {}
+    try:
+        payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _extract_flag_from_opensage_outputs(output_dir: Path) -> str:
+    summary = _read_opensage_summary(output_dir)
+    submitted_flag = str(summary.get("submitted_flag") or "").strip()
+    if submitted_flag:
+        return submitted_flag
+    for rel in ("session_trace.json", "live_events.jsonl"):
+        path = output_dir / rel
+        if not path.exists():
+            continue
+        try:
+            submitted_flag = _extract_submitted_flag(
+                path.read_text(encoding="utf-8", errors="ignore")
+            )
+        except OSError:
+            submitted_flag = ""
+        if submitted_flag:
+            return submitted_flag
+    instances_dir = output_dir / "instances"
+    if instances_dir.exists():
+        for path in instances_dir.rglob("*.json"):
+            try:
+                submitted_flag = _extract_submitted_flag(
+                    path.read_text(encoding="utf-8", errors="ignore")
+                )
+            except OSError:
+                submitted_flag = ""
+            if submitted_flag:
+                return submitted_flag
+    return ""
 
 
 def _extract_opensage_session_ids(output_dir: Path) -> list[str]:
@@ -209,6 +258,7 @@ def _cleanup_opensage_artifacts(output_dir: Path) -> dict[str, Any]:
         "session_ids": session_ids,
         "containers_removed": [],
         "volumes_removed": [],
+        "networks_removed": [],
         "errors": [],
     }
     if not session_ids:
@@ -241,6 +291,19 @@ def _cleanup_opensage_artifacts(output_dir: Path) -> dict[str, Any]:
                 status["volumes_removed"].append(name)
             except Exception as exc:
                 status["errors"].append(f"volume {name}: {type(exc).__name__}: {exc}")
+
+        for network in client.networks.list():
+            name = getattr(network, "name", "")
+            if not name.startswith("cybingym_"):
+                continue
+            if not any(session_id in name for session_id in session_ids):
+                continue
+            try:
+                network.remove()
+                status["networks_removed"].append(name)
+            except Exception as exc:
+                status["errors"].append(f"network {name}: {type(exc).__name__}: {exc}")
+
     except Exception as exc:
         status["errors"].append(f"docker cleanup: {type(exc).__name__}: {exc}")
 
@@ -431,7 +494,7 @@ def opensage_solver(
     base_port: int = 20000,
     port_stride: int = 10,
 ) -> Solver:
-    """Run an OpenSAGE agent and import its generated CyBinGym PoC."""
+    """Run an OpenSAGE agent and import its generated CyBinGym artifacts."""
 
     selected_agent_dir = binary_analysis_agent_dir or opensage_agent_dir
     worker_limit = max(1, int(max_workers))
@@ -533,31 +596,39 @@ def opensage_solver(
                 bridge_status["finished_at"] = _now_iso()
                 _write_bridge_status(bridge_status_path, bridge_status)
 
-        poc_path = sample_output_dir / "poc"
+        poc_path = sample_output_dir / "poc_crash"
         poc_exists = poc_path.exists()
+        submitted_flag = _extract_flag_from_opensage_outputs(sample_output_dir)
+        bridge_status["submitted_flag"] = submitted_flag
         if poc_exists:
-            await sandbox().write_file("poc", poc_path.read_bytes())
+            await sandbox().write_file("poc_crash", poc_path.read_bytes())
+            bridge_status["poc_crash_exists"] = True
+            bridge_status["poc_crash_copied_to_inspect_sandbox"] = True
             bridge_status["poc_exists"] = True
             bridge_status["poc_copied_to_inspect_sandbox"] = True
             _write_bridge_status(bridge_status_path, bridge_status)
             message = (
-                "OpenSAGE generated poc and it was copied into the Inspect sandbox.\n"
+                "OpenSAGE generated poc_crash and it was copied into the Inspect sandbox.\n"
                 f"Return code: {returncode}\n"
                 f"OpenSAGE output: {sample_output_dir}\n"
                 f"MCP ports: {ports}"
             )
         else:
+            bridge_status["poc_crash_exists"] = False
+            bridge_status["poc_crash_copied_to_inspect_sandbox"] = False
             bridge_status["poc_exists"] = False
             bridge_status["poc_copied_to_inspect_sandbox"] = False
             _write_bridge_status(bridge_status_path, bridge_status)
             message = (
-                "OpenSAGE did not produce a poc for this sample.\n"
+                "OpenSAGE did not produce poc_crash for this sample.\n"
                 f"Return code: {returncode}\n"
                 f"OpenSAGE output: {sample_output_dir}\n"
                 f"MCP ports: {ports}\n"
                 f"stdout: {stdout_path}\n"
                 f"stderr: {stderr_path}"
             )
+        if submitted_flag:
+            message = f"{message}\nSubmitted flag: {submitted_flag}"
 
         state.messages.append(
             ChatMessageAssistant(content=message, model="opensage-bridge")
