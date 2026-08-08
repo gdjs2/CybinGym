@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import sys
@@ -57,6 +58,7 @@ except ModuleNotFoundError as exc:
 
 from solvers import opensage_agent
 from solvers import opensage_cybingym_runner
+from solvers import prompts
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -74,7 +76,7 @@ class FakeSession:
 
 
 class OpenSageLeakageTests(unittest.TestCase):
-    def test_shared_sample_payload_removes_target_without_mutating_sample(self):
+    def test_initial_data_dir_does_not_write_sample_json(self):
         sample = {
             "id": "sample-1",
             "input": "prompt",
@@ -82,11 +84,83 @@ class OpenSageLeakageTests(unittest.TestCase):
             "metadata": {"target_binary": "bin"},
         }
 
-        payload = opensage_cybingym_runner._shared_sample_payload(sample)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            desc_dir = root / "data" / "sample-1"
+            desc_dir.mkdir(parents=True)
+            (desc_dir / "desc.txt").write_text("description", encoding="utf-8")
 
-        self.assertNotIn("target", payload)
-        self.assertEqual(sample["target"], "4db0dc42d846a013006afdac736e8c67dd348760e1255bc3416e9f884c579ccc")
-        self.assertEqual(payload["metadata"], {"target_binary": "bin"})
+            evaluation = object.__new__(opensage_cybingym_runner.CyBinGymOpenSageEvaluation)
+            evaluation.cybingym_dir = str(root)
+            evaluation.output_dir = str(root / "outputs")
+
+            shared_dir = Path(evaluation._get_initial_data_dir(sample))
+
+            self.assertTrue((shared_dir / "desc.txt").exists())
+            self.assertFalse((shared_dir / "sample.json").exists())
+
+    def test_opensage_runner_collects_poc_and_poc_crash(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            output_dir = root / "runner"
+            task_output = root / "task"
+            sandbox_output = task_output / "sandbox_output"
+            sandbox_output.mkdir(parents=True)
+            (sandbox_output / "poc_crash").write_bytes(b"crash")
+            (sandbox_output / "poc").write_bytes(b"exploit")
+
+            evaluation = object.__new__(opensage_cybingym_runner.CyBinGymOpenSageEvaluation)
+            evaluation.output_dir = str(output_dir)
+            evaluation.reasoning_effort = ""
+            evaluation.gdb_port = 1111
+            evaluation.ida_pro_mcp_port = 1112
+            evaluation.pyghidra_mcp_port = 1113
+            task = types.SimpleNamespace(
+                id="task-1",
+                sample={"id": "sample-1"},
+                output_dir=str(task_output),
+                session_id="session-1",
+            )
+
+            original_collect = opensage_cybingym_runner.Evaluation._collect_outputs
+
+            async def fake_collect(self, task, session):
+                return {}
+
+            opensage_cybingym_runner.Evaluation._collect_outputs = fake_collect
+            try:
+                info = asyncio.run(
+                    evaluation._collect_outputs(
+                        task,
+                        FakeSession(
+                            {
+                                "events": [
+                                    {
+                                        "author": "ctf_agent",
+                                        "content": {
+                                            "parts": [{"text": "flag{abc123}"}]
+                                        },
+                                    }
+                                ]
+                            }
+                        ),
+                    )
+                )
+            finally:
+                opensage_cybingym_runner.Evaluation._collect_outputs = original_collect
+
+            self.assertEqual((output_dir / "poc_crash").read_bytes(), b"crash")
+            self.assertEqual((output_dir / "poc").read_bytes(), b"exploit")
+            self.assertTrue(info["cybingym"]["poc_crash_found"])
+            self.assertTrue(info["cybingym"]["poc_found"])
+            self.assertEqual(info["cybingym"]["submitted_flag"], "flag{abc123}")
+
+    def test_prompts_require_poc_and_poc_crash(self):
+        self.assertIn("/shared/poc_crash", opensage_cybingym_runner.DEFAULT_PROMPT_TEMPLATE)
+        self.assertIn("/shared/poc", opensage_cybingym_runner.DEFAULT_PROMPT_TEMPLATE)
+        self.assertEqual(opensage_cybingym_runner.CyBinGymOpenSageEvaluation._get_export_dir_in_sandbox(None, {}), "/shared")
+        self.assertIn("/CybinGym_workdir/poc_crash", prompts.exploit_prompt)
+        self.assertIn("/CybinGym_workdir/poc", prompts.exploit_prompt)
 
     def test_victim_dockerfile_rewrite_uses_copy_without_flag_variable(self):
         template = (REPO_ROOT / "agent_env" / "Dockerfile.victim").read_text(

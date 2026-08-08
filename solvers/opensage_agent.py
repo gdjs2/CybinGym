@@ -438,19 +438,21 @@ def _extract_opensage_placeholder_container_ids(output_dir: Path) -> list[str]:
     return container_ids
 
 
-def _salvage_poc_crash_from_shared_volume(
+def _salvage_artifact_from_shared_volume(
     *,
     client: Any,
     volume_name: str,
     output_dir: Path,
+    artifact_name: str,
 ) -> dict[str, Any]:
+    artifact_path = output_dir / artifact_name
     status: dict[str, Any] = {
         "volume": volume_name,
+        "artifact": artifact_name,
         "ok": False,
-        "path": str(output_dir / "poc_crash"),
+        "path": str(artifact_path),
     }
-    poc_path = output_dir / "poc_crash"
-    if poc_path.exists():
+    if artifact_path.exists():
         status["ok"] = True
         status["already_exists"] = True
         return status
@@ -458,7 +460,7 @@ def _salvage_poc_crash_from_shared_volume(
     container = None
     try:
         helper_image = "alpine:latest"
-        helper_name = f"cybingym_poc_extract_{volume_name}"
+        helper_name = f"cybingym_{artifact_name}_extract_{volume_name}"
         try:
             stale = client.containers.get(helper_name)
             stale.remove(force=True)
@@ -472,23 +474,24 @@ def _salvage_poc_crash_from_shared_volume(
             volumes={volume_name: {"bind": "/data", "mode": "ro"}},
         )
         container.start()
-        test_result = container.exec_run(["test", "-f", "/data/poc_crash"])
+        container_artifact_path = f"/data/{artifact_name}"
+        test_result = container.exec_run(["test", "-f", container_artifact_path])
         if test_result.exit_code != 0:
-            status["error"] = "poc_crash not present in shared volume"
+            status["error"] = f"{artifact_name} not present in shared volume"
             return status
 
-        stream, _ = container.get_archive("/data/poc_crash")
+        stream, _ = container.get_archive(container_artifact_path)
         tar_bytes = b"".join(stream)
         with tarfile.open(fileobj=io.BytesIO(tar_bytes)) as tar:
             member = tar.getmembers()[0]
             fileobj = tar.extractfile(member)
             if fileobj is None:
-                status["error"] = "failed to extract poc_crash from archive"
+                status["error"] = f"failed to extract {artifact_name} from archive"
                 return status
-            poc_path.write_bytes(fileobj.read())
+            artifact_path.write_bytes(fileobj.read())
 
         status["ok"] = True
-        status["bytes"] = poc_path.stat().st_size
+        status["bytes"] = artifact_path.stat().st_size
         return status
     except Exception as exc:
         status["error"] = f"{type(exc).__name__}: {exc}"
@@ -508,6 +511,7 @@ def _cleanup_opensage_artifacts(output_dir: Path) -> dict[str, Any]:
         "session_ids": session_ids,
         "placeholder_container_ids": placeholder_container_ids,
         "poc_crash_salvage": [],
+        "poc_salvage": [],
         "containers_removed": [],
         "volumes_removed": [],
         "networks_removed": [],
@@ -521,38 +525,55 @@ def _cleanup_opensage_artifacts(output_dir: Path) -> dict[str, Any]:
 
         cleanup_timeout = int(os.environ.get("OPENSAGE_DOCKER_CLEANUP_TIMEOUT", "60"))
         client = docker.from_env(timeout=cleanup_timeout)
-        poc_path = output_dir / "poc_crash"
+        artifact_salvage_keys = (
+            ("poc_crash", "poc_crash_salvage"),
+            ("poc", "poc_salvage"),
+        )
         for session_id in session_ids:
             volume_name = f"{session_id}_shared"
-            if poc_path.exists():
-                status["poc_crash_salvage"].append(
-                    {
-                        "volume": volume_name,
-                        "ok": True,
-                        "path": str(poc_path),
-                        "already_exists": True,
-                    }
-                )
+            missing_artifacts: list[tuple[str, str]] = []
+            for artifact_name, salvage_key in artifact_salvage_keys:
+                artifact_path = output_dir / artifact_name
+                if artifact_path.exists():
+                    status[salvage_key].append(
+                        {
+                            "volume": volume_name,
+                            "artifact": artifact_name,
+                            "ok": True,
+                            "path": str(artifact_path),
+                            "already_exists": True,
+                        }
+                    )
+                else:
+                    missing_artifacts.append((artifact_name, salvage_key))
+
+            if not missing_artifacts:
                 continue
+
             try:
                 client.volumes.get(volume_name)
             except Exception as exc:
-                status["poc_crash_salvage"].append(
-                    {
-                        "volume": volume_name,
-                        "ok": False,
-                        "path": str(output_dir / "poc_crash"),
-                        "error": f"volume lookup: {type(exc).__name__}: {exc}",
-                    }
-                )
+                for artifact_name, salvage_key in missing_artifacts:
+                    status[salvage_key].append(
+                        {
+                            "volume": volume_name,
+                            "artifact": artifact_name,
+                            "ok": False,
+                            "path": str(output_dir / artifact_name),
+                            "error": f"volume lookup: {type(exc).__name__}: {exc}",
+                        }
+                    )
                 continue
-            status["poc_crash_salvage"].append(
-                _salvage_poc_crash_from_shared_volume(
-                    client=client,
-                    volume_name=volume_name,
-                    output_dir=output_dir,
+
+            for artifact_name, salvage_key in missing_artifacts:
+                status[salvage_key].append(
+                    _salvage_artifact_from_shared_volume(
+                        client=client,
+                        volume_name=volume_name,
+                        output_dir=output_dir,
+                        artifact_name=artifact_name,
+                    )
                 )
-            )
 
         for container in client.containers.list(all=True):
             name = getattr(container, "name", "")
@@ -593,15 +614,15 @@ def _cleanup_opensage_artifacts(output_dir: Path) -> dict[str, Any]:
                 continue
             try:
                 network.remove()
-                status["networks_removed"].append(name)
             except Exception as exc:
                 status["errors"].append(f"network {name}: {type(exc).__name__}: {exc}")
+            else:
+                status["networks_removed"].append(name)
 
     except Exception as exc:
         status["errors"].append(f"docker cleanup: {type(exc).__name__}: {exc}")
 
     return status
-
 
 def _has_recoverable_poc_crash(output_dir: Path) -> bool:
     return (output_dir / "poc_crash").exists()
@@ -627,58 +648,63 @@ async def _import_opensage_outputs_into_state(
     stderr_path: Path,
     interrupted: bool = False,
 ) -> TaskState:
-    poc_path = sample_output_dir / "poc_crash"
-    poc_exists = poc_path.exists()
+    poc_crash_path = sample_output_dir / "poc_crash"
+    poc_path = sample_output_dir / "poc"
+    poc_crash_exists = poc_crash_path.is_file()
+    poc_exists = poc_path.is_file()
     submitted_flag = _extract_flag_from_opensage_outputs(sample_output_dir)
     bridge_status["submitted_flag"] = submitted_flag
 
+    if poc_crash_exists:
+        await sandbox().write_file("poc_crash", poc_crash_path.read_bytes())
     if poc_exists:
-        await sandbox().write_file("poc_crash", poc_path.read_bytes())
-        bridge_status["poc_crash_exists"] = True
-        bridge_status["poc_crash_copied_to_inspect_sandbox"] = True
-        bridge_status["poc_exists"] = True
-        bridge_status["poc_copied_to_inspect_sandbox"] = True
+        await sandbox().write_file("poc", poc_path.read_bytes())
+
+    bridge_status["poc_crash_exists"] = poc_crash_exists
+    bridge_status["poc_crash_copied_to_inspect_sandbox"] = poc_crash_exists
+    bridge_status["poc_exists"] = poc_exists
+    bridge_status["poc_copied_to_inspect_sandbox"] = poc_exists
+
+    if poc_crash_exists and interrupted:
+        bridge_status["cancelled_artifacts_imported"] = True
+        bridge_status["status"] = "cancelled_artifacts_imported"
+
+    _write_bridge_status(bridge_status_path, bridge_status)
+
+    if poc_crash_exists:
+        copied = ["poc_crash"]
+        if poc_exists:
+            copied.append("poc")
+        copied_text = ", ".join(copied)
+        message_lines = [
+            f"OpenSAGE generated {copied_text} and copied available artifacts into the Inspect sandbox.",
+            f"Return code: {returncode}",
+            f"OpenSAGE output: {sample_output_dir}",
+            f"MCP ports: {ports}",
+        ]
         if interrupted:
-            bridge_status["cancelled_artifacts_imported"] = True
-            bridge_status["status"] = "cancelled_artifacts_imported"
-        _write_bridge_status(bridge_status_path, bridge_status)
-        message = (
-            "OpenSAGE generated poc_crash and it was copied into the Inspect sandbox.\n"
-            f"Return code: {returncode}\n"
-            f"OpenSAGE output: {sample_output_dir}\n"
-            f"MCP ports: {ports}"
-        )
-        if interrupted:
-            message = (
-                "OpenSAGE was interrupted after generating poc_crash; the bridge "
-                f"recovered the artifact and copied it into the Inspect sandbox.\n"
-                f"Return code: {returncode}\n"
-                f"OpenSAGE output: {sample_output_dir}\n"
-                f"MCP ports: {ports}"
+            message_lines[0] = (
+                f"OpenSAGE was interrupted after generating {copied_text}; the bridge "
+                "recovered available artifacts and copied them into the Inspect sandbox."
             )
     else:
-        bridge_status["poc_crash_exists"] = False
-        bridge_status["poc_crash_copied_to_inspect_sandbox"] = False
-        bridge_status["poc_exists"] = False
-        bridge_status["poc_copied_to_inspect_sandbox"] = False
-        _write_bridge_status(bridge_status_path, bridge_status)
-        message = (
-            "OpenSAGE did not produce poc_crash for this sample.\n"
-            f"Return code: {returncode}\n"
-            f"OpenSAGE output: {sample_output_dir}\n"
-            f"MCP ports: {ports}\n"
-            f"stdout: {stdout_path}\n"
-            f"stderr: {stderr_path}"
-        )
+        poc_note = " OpenSAGE did produce poc." if poc_exists else ""
+        message_lines = [
+            f"OpenSAGE did not produce poc_crash for this sample.{poc_note}",
+            f"Return code: {returncode}",
+            f"OpenSAGE output: {sample_output_dir}",
+            f"MCP ports: {ports}",
+            f"stdout: {stdout_path}",
+            f"stderr: {stderr_path}",
+        ]
     if submitted_flag:
-        message = f"{message}\nSubmitted flag: {submitted_flag}"
+        message_lines.append(f"Submitted flag: {submitted_flag}")
 
     state.messages.append(
-        ChatMessageAssistant(content=message, model="opensage-bridge")
+        ChatMessageAssistant(content="\n".join(message_lines), model="opensage-bridge")
     )
     state.completed = True
     return state
-
 
 def _stale_inspect_network_warning() -> str | None:
     try:
