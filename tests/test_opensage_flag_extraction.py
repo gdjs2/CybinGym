@@ -2,9 +2,58 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
+
+
+try:
+    import opensage.evaluation.base  # noqa: F401
+except ModuleNotFoundError as exc:
+    if exc.name != "opensage":
+        raise
+
+    opensage_module = types.ModuleType("opensage")
+    evaluation_module = types.ModuleType("opensage.evaluation")
+    base_module = types.ModuleType("opensage.evaluation.base")
+    sandbox_module = types.ModuleType("opensage.sandbox")
+    native_sandbox_module = types.ModuleType("opensage.sandbox.native_docker_sandbox")
+
+    class Evaluation:
+        def __post_init__(self):
+            pass
+
+        def _get_config_template_variables(self, task):
+            return {}
+
+        async def _prepare_environment(self, task):
+            raise RuntimeError("OpenSAGE is not installed")
+
+        async def _collect_outputs(self, task, session):
+            return {}
+
+    class EvaluationTask:
+        pass
+
+    class NativeDockerSandbox:
+        @classmethod
+        def _get_helper_image(cls):
+            return ""
+
+    native_sandbox_module.NativeDockerSandbox = NativeDockerSandbox
+    sandbox_module.native_docker_sandbox = native_sandbox_module
+    base_module.Evaluation = Evaluation
+    base_module.EvaluationTask = EvaluationTask
+    evaluation_module.base = base_module
+    opensage_module.evaluation = evaluation_module
+    opensage_module.sandbox = sandbox_module
+    sys.modules["opensage"] = opensage_module
+    sys.modules["opensage.evaluation"] = evaluation_module
+    sys.modules["opensage.evaluation.base"] = base_module
+    sys.modules["opensage.sandbox"] = sandbox_module
+    sys.modules["opensage.sandbox.native_docker_sandbox"] = native_sandbox_module
 
 from solvers import opensage_agent
 from solvers import opensage_cybingym_runner
@@ -48,7 +97,9 @@ class OpenSageLeakageTests(unittest.TestCase):
 
         self.assertIn("COPY flag.txt /flag.txt", rewritten)
         self.assertIn("RUN chmod 644 /flag.txt", rewritten)
+        self.assertNotIn("ARG FLAG", rewritten)
         self.assertNotIn("CYBINGYM_FLAG", rewritten)
+        self.assertNotIn("${FLAG}", rewritten)
         self.assertNotIn("flag{", rewritten)
 
     def test_opensage_config_does_not_reference_flag_template_variable(self):

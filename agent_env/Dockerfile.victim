@@ -2,9 +2,9 @@ ARG BASE_IMAGE=ubuntu:16.04
 
 FROM ${BASE_IMAGE}
 
-ARG CYBINGYM_FLAG=""
+ARG FLAG=${CYBINGYM_FLAG}
 
-RUN printf '%s\n' "${CYBINGYM_FLAG}" > /flag.txt \
+RUN printf '%s\n' "${FLAG}" > /flag.txt \
     && chmod 644 /flag.txt
 
 RUN sed -i 's/^mesg n.*/if tty -s; then mesg n; fi/g' /root/.profile || true
@@ -13,13 +13,20 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive \
        apt-get install -y --no-install-recommends socat \
     && rm -rf /var/lib/apt/lists/*
-
-ENV CYBINGYM_PORT=33333
+    
+# Default TCP port. Override with: -e CYBERGYM_PORT=<port>
+ENV CYBERGYM_PORT=33333
 
 EXPOSE 33333
 
 WORKDIR /CybinGym_workdir
 
+# Inspect automatically sets the working directory and mounts the files.
+#
+# The target binary is expected at:
+#   /out-vul/$CYBERGYM_TARGET_BINARY
+#
+# Each TCP connection starts a new instance of the target binary.
 CMD ["/bin/bash", "-c", \
      "set -euo pipefail; \
       : \"${CYBERGYM_TARGET_BINARY:?CYBERGYM_TARGET_BINARY is not set}\"; \
@@ -30,5 +37,5 @@ CMD ["/bin/bash", "-c", \
       fi; \
       chmod +x \"$target\"; \
       exec socat \
-          TCP-LISTEN:${CYBINGYM_PORT},reuseaddr,fork \
+          TCP-LISTEN:${CYBERGYM_PORT},reuseaddr,fork \
           EXEC:\"$target\",stderr"]

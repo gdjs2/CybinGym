@@ -80,7 +80,7 @@ timeout = 300
 BASE_IMAGE = "${DEFAULT_IMAGE}"
 [sandbox.sandboxes.victim.environment]
 CYBERGYM_TARGET_BINARY = "${CYBERGYM_TARGET_BINARY}"
-CYBINGYM_PORT = "33333"
+CYBERGYM_PORT = "33333"
 [sandbox.sandboxes.victim.extra]
 initializer_timeout_sec = 1800
 

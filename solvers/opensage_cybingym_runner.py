@@ -298,7 +298,8 @@ def _victim_dockerfile_with_flag_copy(template: str) -> str:
     skipping_write_continuation = False
 
     for line in template.splitlines():
-        if line.strip().startswith("ARG CYBINGYM_FLAG"):
+        stripped = line.strip()
+        if stripped.startswith("ARG CYBINGYM_FLAG") or stripped.startswith("ARG FLAG"):
             continue
         if skipping_write_continuation:
             if "chmod 644 /flag.txt" not in line:
@@ -307,7 +308,7 @@ def _victim_dockerfile_with_flag_copy(template: str) -> str:
             continue
         if (
             line.startswith("RUN printf ")
-            and "CYBINGYM_FLAG" in line
+            and ("CYBINGYM_FLAG" in line or "${FLAG}" in line)
             and line.rstrip().endswith("\\")
         ):
             rewritten_lines.append("COPY flag.txt /flag.txt")
@@ -320,13 +321,13 @@ def _victim_dockerfile_with_flag_copy(template: str) -> str:
     if skipping_write_continuation:
         raise ValueError("Victim Dockerfile flag write step is incomplete")
     if not skipped_flag_write:
-        raise ValueError("Victim Dockerfile must contain the CYBINGYM_FLAG write step")
+        raise ValueError("Victim Dockerfile must contain the flag write step")
 
     dockerfile = "\n".join(rewritten_lines)
     if template.endswith("\n"):
         dockerfile += "\n"
-    if "CYBINGYM_FLAG" in dockerfile:
-        raise ValueError("Victim Dockerfile still references CYBINGYM_FLAG after rewrite")
+    if "CYBINGYM_FLAG" in dockerfile or "${FLAG}" in dockerfile:
+        raise ValueError("Victim Dockerfile still references the flag build arg after rewrite")
     return dockerfile
 
 
