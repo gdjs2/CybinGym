@@ -1,32 +1,48 @@
-ARG BASE_IMAGE=ubuntu:16.04
+# syntax=docker/dockerfile:1
 
+ARG BASE_IMAGE=ubuntu:16.04
 FROM ${BASE_IMAGE}
 
-ARG FLAG=${CYBINGYM_FLAG}
-
-RUN printf '%s\n' "${FLAG}" > /flag.txt \
-    && chmod 644 /flag.txt
-
-RUN sed -i 's/^mesg n.*/if tty -s; then mesg n; fi/g' /root/.profile || true
-
 RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive \
-       apt-get install -y --no-install-recommends socat \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        --no-install-recommends \
+        socat \
+        passwd \
     && rm -rf /var/lib/apt/lists/*
-    
-# Default TCP port. Override with: -e CYBERGYM_PORT=<port>
+
+# Fixed UID/GID makes permissions predictable.
+RUN groupadd --gid 10001 cybingym \
+    && useradd \
+        --uid 10001 \
+        --gid 10001 \
+        --no-create-home \
+        --home-dir /nonexistent \
+        --shell /usr/sbin/nologin \
+        cybingym
+
+# Root-owned and readable only by root.
+ARG FLAG=${CYBINGYM_FLAG}
+RUN umask 077 \
+    && printf '%s\n' "${FLAG}" > /flag.txt \
+    && chown root:root /flag.txt \
+    && chmod 0600 /flag.txt
+
+RUN sed -i \
+    's/^mesg n.*/if tty -s; then mesg n; fi/g' \
+    /root/.profile || true
+
 ENV CYBERGYM_PORT=33333
 
 EXPOSE 33333
 
+RUN mkdir -p /CybinGym_workdir \
+    && chown 10001:10001 /CybinGym_workdir
+
 WORKDIR /CybinGym_workdir
 
-# Inspect automatically sets the working directory and mounts the files.
-#
-# The target binary is expected at:
-#   /out-vul/$CYBERGYM_TARGET_BINARY
-#
-# Each TCP connection starts a new instance of the target binary.
+# Everything below runs as the unprivileged user.
+USER 10001:10001
+
 CMD ["/bin/bash", "-c", \
      "set -euo pipefail; \
       : \"${CYBERGYM_TARGET_BINARY:?CYBERGYM_TARGET_BINARY is not set}\"; \
@@ -35,7 +51,10 @@ CMD ["/bin/bash", "-c", \
           echo \"Target binary not found: $target\" >&2; \
           exit 1; \
       fi; \
-      chmod +x \"$target\"; \
+      if [ ! -x \"$target\" ]; then \
+          echo \"Target binary is not executable: $target\" >&2; \
+          exit 1; \
+      fi; \
       exec socat \
-          TCP-LISTEN:${CYBERGYM_PORT},reuseaddr,fork \
-          EXEC:\"$target\",stderr"]
+          \"TCP-LISTEN:${CYBERGYM_PORT},reuseaddr,fork\" \
+          \"EXEC:${target},stderr\""]

@@ -113,13 +113,18 @@ def create_binary_sample(
         files=files,
     )
 
-@task
-def cybingym(agent_type: str = "basic"):
+def create_cybingym_task(
+    dataset_file_path: Path,
+    agent_type: str,
+) -> Task:
     def build_sample(record: dict[str, Any]) -> Sample:
         metadata = record.get("metadata") or {}
         analysis_image = metadata.get("analysis_image")
+
         if not analysis_image:
-            raise ValueError("Dataset record is missing metadata.analysis_image")
+            raise ValueError(
+                "Dataset record is missing metadata.analysis_image"
+            )
 
         return create_binary_sample(
             prompt=record["input"],
@@ -131,8 +136,30 @@ def cybingym(agent_type: str = "basic"):
         )
 
     return Task(
-        dataset = json_dataset("dataset.json", sample_fields=build_sample),
-        solver=SOLVER_MAP.get(agent_type, SOLVER_MAP["basic"]),
-        scorer = cybingym_scorer(),
-        fail_on_error = False
+        dataset=json_dataset(
+            str(dataset_file_path),
+            sample_fields=build_sample,
+        ),
+        solver=SOLVER_MAP.get(
+            agent_type,
+            SOLVER_MAP["basic"],
+        ),
+        scorer=cybingym_scorer(),
+        fail_on_error=False,
+    )
+
+MAIN_SOURCE_DIR = Path(__file__).resolve().parent
+
+@task
+def cybingym(agent_type: str = "basic") -> Task:
+    return create_cybingym_task(
+        dataset_file_path=MAIN_SOURCE_DIR / "dataset.json",
+        agent_type=agent_type,
+    )
+
+@task
+def cybingym20(agent_type: str = "basic") -> Task:
+    return create_cybingym_task(
+        dataset_file_path=MAIN_SOURCE_DIR / "dataset20.json",
+        agent_type=agent_type,
     )
