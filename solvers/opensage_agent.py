@@ -784,6 +784,7 @@ async def _run_opensage(
     cleanup_grace: int,
     llm_retry_timeout: int,
     llm_retry_count: int,
+    artifact_collection_mode: str,
 ) -> tuple[int, Path, Path, dict[str, Any]]:
     output_dir.mkdir(parents=True, exist_ok=True)
     stdout_path = output_dir / "opensage_stdout.log"
@@ -814,6 +815,8 @@ async def _run_opensage(
             str(output_dir),
             "--max_llm_calls",
             str(max_llm_calls),
+            "--agent_timeout",
+            str(timeout),
             "--max_workers",
             str(max_workers),
             "--llm_retry_timeout",
@@ -822,6 +825,8 @@ async def _run_opensage(
             str(llm_retry_count),
             "--reasoning_effort",
             str(opensage_reasoning_effort),
+            "--artifact_collection_mode",
+            str(artifact_collection_mode),
             "--non_interactive",
             "True",
             "--gdb_port",
@@ -844,6 +849,7 @@ async def _run_opensage(
             llm_retry_count=llm_retry_count,
         )
         process_status: dict[str, Any] = {
+            "agent_timeout_seconds": int(timeout),
             "bridge_timeout_seconds": int(timeout),
             "bridge_cleanup_grace_seconds": int(cleanup_grace),
             "bridge_wait_timeout_seconds": (
@@ -854,6 +860,7 @@ async def _run_opensage(
             "llm_retry_timeout": int(llm_retry_timeout),
             "llm_retry_count": int(llm_retry_count),
             "reasoning_effort": opensage_reasoning_effort,
+            "artifact_collection_mode": artifact_collection_mode,
             "outer_timeout": False,
         }
         with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
@@ -897,6 +904,7 @@ def opensage_solver(
     opensage_model: str = "",
     opensage_provider: str = "",
     opensage_reasoning_effort: str = "",
+    artifact_collection_mode: str = "minimal",
     base_port: int = 20000,
     port_stride: int = 10,
 ) -> Solver:
@@ -939,10 +947,13 @@ def opensage_solver(
             "reasoning_effort": reasoning_effort,
             "bridge_max_workers": worker_limit,
             "runner_max_workers": int(max_workers),
+            "agent_timeout_seconds": int(timeout),
             "bridge_timeout_seconds": int(timeout),
             "bridge_cleanup_grace_seconds": int(cleanup_grace),
+            "max_llm_calls": int(max_llm_calls),
             "llm_retry_timeout": int(llm_retry_timeout),
             "llm_retry_count": int(llm_retry_count),
+            "artifact_collection_mode": artifact_collection_mode,
         }
         docker_warning = _stale_inspect_network_warning()
         if docker_warning:
@@ -985,6 +996,7 @@ def opensage_solver(
                     cleanup_grace=cleanup_grace,
                     llm_retry_timeout=llm_retry_timeout,
                     llm_retry_count=llm_retry_count,
+                    artifact_collection_mode=artifact_collection_mode,
                 )
                 bridge_status.update(runner_status)
                 bridge_status["returncode"] = returncode

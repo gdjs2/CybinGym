@@ -26,15 +26,23 @@ def _litellm_model(model_name: str, *, default_base_url: str | None = None) -> L
         "kimi-k3",
         "kimi-latest",
     }
-    provider_key_env = (
-        ("KIMI_API_KEY", "MOONSHOT_API_KEY") if is_kimi_model else ()
-    )
-    provider_base_url_env = (
-        ("KIMI_BASE_URL", "MOONSHOT_BASE_URL") if is_kimi_model else ()
-    )
+    is_anthropic_model = model_name.startswith("anthropic/") or model_name.startswith("claude")
+    is_openai_model = model_name.startswith("openai/") or model_name.startswith("gpt-")
+    if is_kimi_model:
+        provider_key_env = ("KIMI_API_KEY", "MOONSHOT_API_KEY")
+        provider_base_url_env = ("KIMI_BASE_URL", "MOONSHOT_BASE_URL")
+    elif is_anthropic_model:
+        provider_key_env = ("ANTHROPIC_API_KEY",)
+        provider_base_url_env = ("ANTHROPIC_BASE_URL",)
+    elif is_openai_model:
+        provider_key_env = ("OPENAI_API_KEY", "OPENAI_API")
+        provider_base_url_env = ("OPENAI_BASE_URL",)
+    else:
+        provider_key_env = ()
+        provider_base_url_env = ()
     api_key = _first_env(
-        "OPENSAGE_API_KEY",
         *provider_key_env,
+        "OPENSAGE_API_KEY",
         "OPENAI_API_KEY",
         "OPENAI_API",
         "GPT_LITELLM_API_KEY",
@@ -42,8 +50,8 @@ def _litellm_model(model_name: str, *, default_base_url: str | None = None) -> L
     )
     base_url = (
         _first_env(
-            "OPENSAGE_BASE_URL",
             *provider_base_url_env,
+            "OPENSAGE_BASE_URL",
             "GPT_LITELLM_BASE_URL",
         )
         or default_base_url

@@ -95,6 +95,12 @@ models_python_file = "models.py"
 evaluation_replace_all_models_with_model_name = "${MAIN_MODEL}"
 budget = 0.0
 
+[[model.prices]]
+model = "moonshot/kimi-k3"
+prompt_per_million = 3.0
+completion_per_million = 15.0
+cached_per_million = 0.3
+
 [history]
 max_tool_response_length = 20000
 enable_quota_countdown = true

@@ -107,6 +107,7 @@ def _select_solver(
     opensage_model: str,
     opensage_provider: str,
     opensage_reasoning_effort: str,
+    opensage_artifact_collection_mode: str,
     opensage_base_port: int,
     opensage_port_stride: int,
 ):
@@ -139,6 +140,7 @@ def _select_solver(
             opensage_model=opensage_model,
             opensage_provider=opensage_provider,
             opensage_reasoning_effort=opensage_reasoning_effort,
+            artifact_collection_mode=opensage_artifact_collection_mode,
             base_port=opensage_base_port,
             port_stride=opensage_port_stride,
         )
@@ -181,15 +183,19 @@ def create_binary_sample(
         )
     )
     flag = secrets.token_hex(32)
+    catflag_helper_id = secrets.token_hex(8)
     dockerfile_victim = build_context / "Dockerfile.victim"
     dockerfile_victim.write_text(
         dockerfile_victim.read_text().replace(
             "FROM ${BASE_IMAGE}",
             f"FROM {prebuilt_base_image}",
-            1,
         ).replace(
             "${CYBINGYM_FLAG}",
             f"flag{{{flag}}}",
+            1,
+        ).replace(
+            "ARG CYBINGYM_CATFLAG_HELPER_ID=0000000000000000",
+            f"ARG CYBINGYM_CATFLAG_HELPER_ID={catflag_helper_id}",
             1,
         )
     )
@@ -278,6 +284,7 @@ def cybingym(
     opensage_model: str = "",
     opensage_provider: str = "",
     opensage_reasoning_effort: str = "",
+    opensage_artifact_collection_mode: str = "minimal",
     opensage_sample_ids: str = OPENSAGE_SMOKE_SAMPLE_IDS,
     opensage_base_port: int = 20000,
     opensage_port_stride: int = 10,
@@ -420,6 +427,7 @@ def cybingym(
             opensage_model=opensage_model,
             opensage_provider=opensage_provider,
             opensage_reasoning_effort=opensage_reasoning_effort,
+            opensage_artifact_collection_mode=opensage_artifact_collection_mode,
             opensage_base_port=opensage_base_port,
             opensage_port_stride=opensage_port_stride,
         ),

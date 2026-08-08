@@ -20,6 +20,7 @@ OUTCOME_UNATTEMPTED = "unattempted"
 DEFAULT_OPENSAGE_OUTPUT_DIR = Path("evals/opensage_inspect")
 DEFAULT_INSPECT_LOG_DIR = Path("logs")
 
+
 _ERROR_LINE_RE = re.compile(r"\| ERROR\s+\|")
 _OPENSAGE_OUTPUT_RE = re.compile(r"^OpenSAGE output:\s*(.+)$", re.MULTILINE)
 
@@ -204,6 +205,28 @@ def build_opensage_history(
         classify_sample_history(history)
 
     return dict(sorted(histories.items(), key=lambda item: _sample_sort_key(item[0])))
+
+
+def discover_history_models(
+    *,
+    output_dir: str | Path = DEFAULT_OPENSAGE_OUTPUT_DIR,
+    log_dir: str | Path = DEFAULT_INSPECT_LOG_DIR,
+    sample_ids: set[str] | None = None,
+    provider: str | None = None,
+) -> list[str]:
+    histories = build_opensage_history(
+        output_dir=output_dir,
+        log_dir=log_dir,
+        sample_ids=sample_ids,
+        provider=provider,
+    )
+    models: set[str] = set()
+    for history in histories.values():
+        for record in [*history.scores, *history.runs]:
+            model = _clean_str(record.model)
+            if model:
+                models.add(model)
+    return sorted(models, key=_model_sort_key)
 
 
 def classify_sample_history(history: SampleHistory) -> None:
@@ -472,6 +495,127 @@ def history_summary_dict(
             for sample_id, history in histories.items()
         },
     }
+
+
+def build_per_model_history_summary(
+    *,
+    output_dir: str | Path = DEFAULT_OPENSAGE_OUTPUT_DIR,
+    log_dir: str | Path = DEFAULT_INSPECT_LOG_DIR,
+    sample_ids: set[str] | None = None,
+    mode: str = "all",
+    provider: str | None = None,
+    include_records: bool = False,
+) -> dict[str, Any]:
+    model_names = discover_history_models(
+        output_dir=output_dir,
+        log_dir=log_dir,
+        sample_ids=sample_ids,
+        provider=provider,
+    )
+    summaries: dict[str, Any] = {}
+    selected_total = 0
+
+    for model_name in model_names:
+        histories = build_opensage_history(
+            output_dir=output_dir,
+            log_dir=log_dir,
+            sample_ids=sample_ids,
+            model=model_name,
+            provider=provider,
+        )
+        selected_ids = filter_histories(histories, mode)
+        selected_total += len(selected_ids)
+        summaries[model_name] = history_summary_dict(
+            histories,
+            selected_ids=selected_ids,
+            mode=mode,
+            model=model_name,
+            provider=provider,
+            include_records=include_records,
+        )
+
+    return {
+        "generated_at": datetime.datetime.now(datetime.UTC).isoformat(),
+        "mode": mode or "all",
+        "provider": provider,
+        "model_count": len(model_names),
+        "selected_total": selected_total,
+        "models": summaries,
+    }
+
+
+def format_per_model_history_summary(
+    summary: dict[str, Any],
+    *,
+    limit: int = 80,
+) -> str:
+    models = summary.get("models") if isinstance(summary, dict) else {}
+    if not isinstance(models, dict):
+        models = {}
+
+    lines = [
+        "OpenSAGE per-model history summary",
+        f"Mode: {summary.get('mode') or 'all'}",
+        f"Provider: {summary.get('provider') or 'all'}",
+        f"Models: {len(models)}",
+        f"Selected for this filter across models: {summary.get('selected_total', 0)}",
+    ]
+    if not models:
+        lines.append("No model-scoped history records found.")
+        return "\n".join(lines)
+
+    for model_name in sorted(models, key=_model_sort_key):
+        model_summary = models[model_name]
+        counts = model_summary.get("counts", {})
+        selected_ids = model_summary.get("selected_ids", [])
+        samples = model_summary.get("samples", {})
+        lines.extend(
+            [
+                "",
+                f"Model: {model_name}",
+                f"Total tracked samples: {counts.get('total', 0)}",
+                (
+                    "Solved: {solved} | Clean unsolved: {unsolved} | "
+                    "Error/rerunnable: {error} | Unattempted: {unattempted}"
+                ).format(
+                    solved=counts.get(OUTCOME_SOLVED, 0),
+                    unsolved=counts.get(OUTCOME_UNSOLVED, 0),
+                    error=counts.get(OUTCOME_ERROR, 0),
+                    unattempted=counts.get(OUTCOME_UNATTEMPTED, 0),
+                ),
+                f"Selected for this filter: {len(selected_ids)}",
+            ]
+        )
+
+        for outcome, label in [
+            (OUTCOME_SOLVED, "Solved"),
+            (OUTCOME_UNSOLVED, "Clean unsolved"),
+            (OUTCOME_ERROR, "Error/rerunnable"),
+            (OUTCOME_UNATTEMPTED, "Unattempted"),
+        ]:
+            ids = [
+                str(sample_id)
+                for sample_id, history in samples.items()
+                if isinstance(history, dict) and history.get("outcome") == outcome
+            ]
+            lines.append(f"{label} IDs: {_format_ids(ids, limit=limit)}")
+
+    return "\n".join(lines)
+
+
+def write_per_model_history_summary(
+    path: str | Path,
+    summary: dict[str, Any],
+) -> None:
+    summary_path = Path(path)
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    if summary_path.suffix.lower() == ".json":
+        text = json.dumps(summary, indent=2) + "\n"
+    else:
+        text = format_per_model_history_summary(summary) + "\n"
+    tmp_path = summary_path.with_name(f".{summary_path.name}.{uuid.uuid4().hex}.tmp")
+    tmp_path.write_text(text, encoding="utf-8")
+    tmp_path.replace(summary_path)
 
 
 def write_history_summary(
@@ -820,6 +964,13 @@ def _sample_sort_key(sample_id: str) -> tuple[int, int | str]:
         return (1, sample_id)
 
 
+def _model_sort_key(model: str) -> tuple[int, str]:
+    provider, has_provider, name = model.partition("/")
+    if has_provider:
+        return (0, provider, name)
+    return (1, model, "")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Summarize OpenSAGE CyBinGym history.")
     parser.add_argument("--output-dir", default=str(DEFAULT_OPENSAGE_OUTPUT_DIR))
@@ -852,13 +1003,38 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="When writing JSON, include all score/run records.",
     )
+    parser.add_argument(
+        "--per-model",
+        action="store_true",
+        help="Print/write separate history summaries for every model found.",
+    )
     args = parser.parse_args(argv)
+
+    if args.per_model and args.model:
+        parser.error("--per-model cannot be combined with --model")
+    if args.per_model and args.include_unknown_model:
+        parser.error("--per-model cannot be combined with --include-unknown-model")
 
     sample_ids = parse_sample_ids(args.sample_ids)
     if sample_ids is None and args.dataset:
         dataset_path = Path(args.dataset)
         if dataset_path.exists():
             sample_ids = load_dataset_ids(dataset_path)
+
+    if args.per_model:
+        summary = build_per_model_history_summary(
+            output_dir=args.output_dir,
+            log_dir=args.log_dir,
+            sample_ids=sample_ids,
+            mode=args.filter,
+            provider=args.provider or None,
+            include_records=args.include_records,
+        )
+        text = format_per_model_history_summary(summary)
+        print(text)
+        if args.write:
+            write_per_model_history_summary(args.write, summary)
+        return 0
 
     histories = build_opensage_history(
         output_dir=args.output_dir,
