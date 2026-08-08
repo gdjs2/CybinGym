@@ -1,0 +1,1 @@
+A buffer overflow exists in the oberthur module due to an overlooked boundary check.

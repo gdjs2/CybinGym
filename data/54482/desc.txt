@@ -1,0 +1,1 @@
+A vulnerability exists in the hdmx size calculation in the [subset] component, where addition overflow is not checked.

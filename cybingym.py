@@ -106,6 +106,7 @@ def _select_solver(
     opensage_source_dir: str,
     opensage_model: str,
     opensage_provider: str,
+    opensage_reasoning_effort: str,
     opensage_base_port: int,
     opensage_port_stride: int,
 ):
@@ -137,6 +138,7 @@ def _select_solver(
             opensage_source_dir=opensage_source_dir,
             opensage_model=opensage_model,
             opensage_provider=opensage_provider,
+            opensage_reasoning_effort=opensage_reasoning_effort,
             base_port=opensage_base_port,
             port_stride=opensage_port_stride,
         )
@@ -275,6 +277,7 @@ def cybingym(
     opensage_source_dir: str = DEFAULT_OPENSAGE_SOURCE_DIR,
     opensage_model: str = "",
     opensage_provider: str = "",
+    opensage_reasoning_effort: str = "",
     opensage_sample_ids: str = OPENSAGE_SMOKE_SAMPLE_IDS,
     opensage_base_port: int = 20000,
     opensage_port_stride: int = 10,
@@ -416,6 +419,7 @@ def cybingym(
             opensage_source_dir=opensage_source_dir,
             opensage_model=opensage_model,
             opensage_provider=opensage_provider,
+            opensage_reasoning_effort=opensage_reasoning_effort,
             opensage_base_port=opensage_base_port,
             opensage_port_stride=opensage_port_stride,
         ),

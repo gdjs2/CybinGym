@@ -1,0 +1,1 @@
+A buffer overflow exists in libsnmp when the ASN encoding of the first two components of an OID occupies more bytes than the ASN encoding of the first two components truncated to 32 bits. This issue is related to the asn_build_objid() implementation.

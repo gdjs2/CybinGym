@@ -1,0 +1,1 @@
+There is a potential vulnerability due to uninitialized pad bits in the function pixGetRasterData() when d < 8, which may lead to uninitialized data being used in zlib compression.

@@ -1,0 +1,1 @@
+Lua can generate incorrect code when the _ENV variable is declared as <const>.

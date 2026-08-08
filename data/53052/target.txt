@@ -1,0 +1,1 @@
+gs_device_pdfwrite_opts_fuzzer

@@ -1,0 +1,1 @@
+A vulnerability exists in libsepol where conditional expressions, including the values of the booleans within them, are not validated when validating a policydb.

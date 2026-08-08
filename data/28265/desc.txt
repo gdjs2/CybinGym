@@ -1,0 +1,1 @@
+The http_client lacks a check on the variable val, which leads to an overflow.

@@ -5,6 +5,7 @@ import datetime
 import json
 import os
 import re
+import shlex
 import shutil
 import sys
 import time
@@ -332,6 +333,53 @@ def _docker_network_name(session_id: str) -> str:
     return f"cybingym_{session_id}"
 
 
+def _failed_check_names(summary: dict[str, Any]) -> list[str]:
+    checks = summary.get("checks")
+    if not isinstance(checks, dict):
+        return []
+    return [
+        str(name)
+        for name, check in checks.items()
+        if not (isinstance(check, dict) and check.get("ok", False))
+    ]
+
+
+class MCPPreflightError(RuntimeError):
+    def __init__(self, summary: dict[str, Any]) -> None:
+        self.summary = summary
+        failed = _failed_check_names(summary)
+        detail = ", ".join(failed) if failed else str(summary.get("error") or "unknown")
+        super().__init__(f"MCP preflight failed: {detail}")
+
+
+_REQUIRED_MCP_SERVICES = ("gdb_mcp", "ida_pro_mcp", "pyghidra_mcp")
+
+
+def _is_required_mcp_runtime_failure(line: str) -> bool:
+    if "MCP server " in line and "unreachable, returning empty tool list" in line:
+        return any(f"MCP server {name}" in line for name in _REQUIRED_MCP_SERVICES)
+
+    if "MCP tool " in line and " failed" in line:
+        return any(
+            f"MCP tool {name}_" in line
+            or f"MCP tool '{name}_" in line
+            or f'"MCP tool {name}_' in line
+            or f'"MCP tool \'{name}_' in line
+            for name in _REQUIRED_MCP_SERVICES
+        )
+
+    return False
+
+
+class MCPRuntimeError(RuntimeError):
+    def __init__(self, summary: dict[str, Any]) -> None:
+        self.summary = summary
+        first_hit = (summary.get("hits") or [{}])[0]
+        detail = str(first_hit.get("text") or "unknown required MCP runtime failure")
+        total = int(summary.get("total", 0))
+        super().__init__(f"MCP runtime failure after preflight: {total} occurrence(s); first: {detail}")
+
+
 @dataclass(kw_only=True)
 class CyBinGymOpenSageEvaluation(Evaluation):
     """Run an arbitrary OpenSAGE agent for one CyBinGym sample."""
@@ -346,15 +394,18 @@ class CyBinGymOpenSageEvaluation(Evaluation):
     max_llm_calls: int = 0
     llm_retry_timeout: int = 600
     llm_retry_count: int = 5
+    reasoning_effort: str = ""
     non_interactive: bool = True
     run_until_explicit_finish: bool = True
     use_config_model: bool = False
+    fail_on_mcp_preflight: bool = True
+    fail_on_mcp_runtime_error: bool = True
 
     pwn_tools_dockerfile: str | None = None
     victim_dockerfile: str | None = None
     gdb_mcp_dockerfile: str | None = None
     pwn_tools_base_image: str = "kalilinux/kali-rolling"
-    main_model: str = "openai/gpt-5.5"
+    main_model: str = "openai/gpt-5.6"
     gdb_port: int = 1111
     ida_pro_mcp_port: int = 1112
     pyghidra_mcp_port: int = 1113
@@ -362,6 +413,11 @@ class CyBinGymOpenSageEvaluation(Evaluation):
     def __post_init__(self) -> None:
         os.environ["OPENSAGE_LITELLM_TIMEOUT"] = str(int(self.llm_retry_timeout))
         os.environ["OPENSAGE_LITELLM_NUM_RETRIES"] = str(int(self.llm_retry_count))
+        self.reasoning_effort = str(
+            self.reasoning_effort or os.environ.get("OPENSAGE_REASONING_EFFORT", "")
+        ).strip()
+        if self.reasoning_effort:
+            os.environ["OPENSAGE_REASONING_EFFORT"] = self.reasoning_effort
 
         self.sample_json = str(Path(self.sample_json).expanduser().resolve())
         self.cybingym_dir = str(Path(self.cybingym_dir).expanduser().resolve())
@@ -493,11 +549,13 @@ class CyBinGymOpenSageEvaluation(Evaluation):
                 "CYBINGYM_FLAG": _expected_flag_text(task.sample),
                 "DOCKER_NETWORK": _docker_network_name(task.session_id),
                 "TASK_NAME": task.id,
+                "SESSION_ID": task.session_id,
                 "GDB_PORT": int(self.gdb_port),
                 "IDA_PRO_MCP_PORT": int(self.ida_pro_mcp_port),
                 "PYGHIDRA_MCP_PORT": int(self.pyghidra_mcp_port),
                 "CYBERGYM_TARGET_BINARY": target_binary,
                 "MAIN_MODEL": os.environ.get("OPENSAGE_MODEL", self.main_model),
+                "REASONING_EFFORT": self.reasoning_effort,
                 "CTF_TASK_DATA_DIR": task.initial_data_dir or "",
             }
         )
@@ -519,6 +577,7 @@ class CyBinGymOpenSageEvaluation(Evaluation):
             "poc_path": str(root_poc) if copied_poc.exists() else "",
             "submitted_flag": submitted_flag,
             "task_output_dir": str(task_output),
+            "reasoning_effort": self.reasoning_effort,
             "docker_network": _docker_network_name(task.session_id),
             "ports": {
                 "gdb_mcp": int(self.gdb_port),
@@ -546,6 +605,279 @@ class CyBinGymOpenSageEvaluation(Evaluation):
         except docker.errors.NotFound:
             client.networks.create(name, driver="bridge", check_duplicate=True)
 
+    async def _run_mcp_preflight(
+        self,
+        task: EvaluationTask,
+        *,
+        summary_path: Path,
+    ) -> dict[str, Any]:
+        from opensage.utils.agent_utils import (
+            get_mcp_host_and_port_from_session_id,
+            get_mcp_url_from_session_id,
+        )
+
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary: dict[str, Any] = {
+            "ok": True,
+            "phase": "mcp_preflight",
+            "sample_id": task.sample.get("id"),
+            "task_id": task.id,
+            "session_id": task.session_id,
+            "output_dir": task.output_dir,
+            "checks": {},
+        }
+
+        try:
+            metadata = task.sample.get("metadata") or {}
+            target_binary = metadata.get("target_binary")
+            if not target_binary:
+                raise ValueError("Sample metadata is missing target_binary")
+
+            session = task.opensage_session
+            main = session.sandboxes.get_sandbox("main")
+
+            vulnerable_out = f"/out-vul/{target_binary}"
+            fixed_out = f"/out-fix/{target_binary}"
+            vulnerable_shared = f"/shared/targets/vulnerable/{target_binary}"
+            fixed_shared = f"/shared/targets/fixed/{target_binary}"
+
+            stage_cmd = (
+                "set -eux; "
+                f"mkdir -p {shlex.quote(str(Path(vulnerable_shared).parent))} "
+                f"{shlex.quote(str(Path(fixed_shared).parent))}; "
+                f"cp {shlex.quote(vulnerable_out)} {shlex.quote(vulnerable_shared)}; "
+                f"cp {shlex.quote(fixed_out)} {shlex.quote(fixed_shared)}; "
+                f"test -s {shlex.quote(vulnerable_shared)}; "
+                f"test -s {shlex.quote(fixed_shared)}"
+            )
+            output, exit_code = main.run_command_in_container(stage_cmd, timeout=60)
+            summary["checks"]["stage_targets"] = {
+                "ok": exit_code == 0,
+                "exit_code": exit_code,
+                "output": output[-4000:],
+                "vulnerable_shared": vulnerable_shared,
+                "fixed_shared": fixed_shared,
+            }
+            if exit_code != 0:
+                summary["ok"] = False
+
+            gdb_url = get_mcp_url_from_session_id("gdb_mcp", task.session_id)
+            pyghidra_url = get_mcp_url_from_session_id("pyghidra_mcp", task.session_id)
+            ida_host, ida_port = get_mcp_host_and_port_from_session_id(
+                "ida_pro_mcp", task.session_id
+            )
+            ida_url = f"http://{ida_host}:{ida_port}/mcp"
+
+            summary["checks"]["gdb_mcp"] = await _check_mcp_service(
+                service_name="gdb_mcp",
+                transport="sse",
+                url=gdb_url,
+                calls=[
+                    {
+                        "name": "set_file",
+                        "candidates": ["set_file", "gdb_mcp_set_file"],
+                        "arguments": {"binary_path": vulnerable_out},
+                        "timeout": 60,
+                    },
+                    {
+                        "name": "get_session_info",
+                        "candidates": ["get_session_info", "gdb_mcp_get_session_info"],
+                        "arguments": {},
+                        "timeout": 30,
+                    },
+                ],
+            )
+
+            summary["checks"]["pyghidra_mcp"] = await _check_mcp_service(
+                service_name="pyghidra_mcp",
+                transport="sse",
+                url=pyghidra_url,
+                calls=[
+                    {
+                        "name": "list_project_binaries_before_import",
+                        "candidates": [
+                            "list_project_binaries",
+                            "pyghidra_mcp_list_project_binaries",
+                        ],
+                        "arguments": {},
+                        "timeout": 60,
+                    },
+                    {
+                        "name": "import_binary",
+                        "candidates": ["import_binary", "pyghidra_mcp_import_binary"],
+                        "arguments": {"binary_path": vulnerable_shared},
+                        "timeout": 300,
+                    },
+                    {
+                        "name": "list_project_binaries_after_import",
+                        "candidates": [
+                            "list_project_binaries",
+                            "pyghidra_mcp_list_project_binaries",
+                        ],
+                        "arguments": {},
+                        "timeout": 60,
+                        "repeat_until_ok": True,
+                        "overall_timeout": 420,
+                        "interval": 10,
+                        "expect": {"programs_contains": target_binary},
+                    },
+                ],
+            )
+
+            summary["checks"]["ida_pro_mcp"] = await _check_mcp_service(
+                service_name="ida_pro_mcp",
+                transport="streamable_http",
+                url=ida_url,
+                calls=[
+                    {
+                        "name": "idb_list",
+                        "candidates": ["idb_list", "ida_pro_mcp_idb_list"],
+                        "arguments": {},
+                        "timeout": 30,
+                    },
+                    {
+                        "name": "idb_open",
+                        "candidates": ["idb_open", "ida_pro_mcp_idb_open"],
+                        "arguments": {
+                            "input_path": vulnerable_shared,
+                            "run_auto_analysis": False,
+                            "build_caches": False,
+                            "init_hexrays": False,
+                        },
+                        "timeout": 180,
+                    },
+                ],
+            )
+
+            for check in summary["checks"].values():
+                if isinstance(check, dict) and not check.get("ok", False):
+                    summary["ok"] = False
+        except Exception as exc:
+            summary["ok"] = False
+            summary["error"] = f"{type(exc).__name__}: {exc}"
+        finally:
+            summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
+        return summary
+
+    def _write_mcp_preflight_failure_result(
+        self,
+        task: EvaluationTask,
+        preflight_summary: dict[str, Any],
+        preflight_path: Path,
+    ) -> None:
+        summary = {
+            "task_id": task.id,
+            "sample_id": task.sample.get("id"),
+            "poc_crash_found": False,
+            "poc_crash_path": "",
+            "poc_found": False,
+            "poc_path": "",
+            "submitted_flag": "",
+            "task_output_dir": str(task.output_dir),
+            "docker_network": _docker_network_name(task.session_id),
+            "ports": {
+                "gdb_mcp": int(self.gdb_port),
+                "ida_pro_mcp": int(self.ida_pro_mcp_port),
+                "pyghidra_mcp": int(self.pyghidra_mcp_port),
+            },
+            "mcp_preflight": {
+                "ok": False,
+                "path": str(preflight_path),
+                "failed_checks": _failed_check_names(preflight_summary),
+                "error": preflight_summary.get("error", ""),
+            },
+        }
+        summary_path = Path(self.output_dir) / "cybingym_result.json"
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
+    def _find_mcp_runtime_failures(
+        self, task: EvaluationTask, *, max_hits: int = 20
+    ) -> dict[str, Any]:
+        paths = [
+            Path(task.output_dir) / "execution_debug.log",
+            Path(self.output_dir) / "evaluation_master.log",
+        ]
+        hits: list[dict[str, Any]] = []
+        total = 0
+        seen: set[tuple[str, int]] = set()
+
+        for path in paths:
+            if not path.exists():
+                continue
+            try:
+                with path.open("r", encoding="utf-8", errors="replace") as handle:
+                    for lineno, line in enumerate(handle, 1):
+                        if not _is_required_mcp_runtime_failure(line):
+                            continue
+                        key = (str(path), lineno)
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        total += 1
+                        if len(hits) < max_hits:
+                            hits.append(
+                                {
+                                    "path": str(path),
+                                    "line": lineno,
+                                    "text": line.strip()[-1200:],
+                                }
+                            )
+            except OSError as exc:
+                total += 1
+                if len(hits) < max_hits:
+                    hits.append(
+                        {
+                            "path": str(path),
+                            "line": 0,
+                            "text": f"failed to scan runtime MCP log: {type(exc).__name__}: {exc}",
+                        }
+                    )
+
+        return {
+            "ok": total == 0,
+            "total": total,
+            "hits": hits,
+            "truncated": total > len(hits),
+        }
+
+    def _write_mcp_runtime_failure_result(
+        self,
+        task: EvaluationTask,
+        runtime_summary: dict[str, Any],
+        runtime_path: Path,
+    ) -> None:
+        summary_path = Path(self.output_dir) / "cybingym_result.json"
+        if summary_path.exists():
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        else:
+            summary = {
+                "task_id": task.id,
+                "sample_id": task.sample.get("id"),
+                "poc_crash_found": False,
+                "poc_crash_path": "",
+                "poc_found": False,
+                "poc_path": "",
+                "submitted_flag": "",
+                "task_output_dir": str(task.output_dir),
+                "docker_network": _docker_network_name(task.session_id),
+                "ports": {
+                    "gdb_mcp": int(self.gdb_port),
+                    "ida_pro_mcp": int(self.ida_pro_mcp_port),
+                    "pyghidra_mcp": int(self.pyghidra_mcp_port),
+                },
+            }
+        summary["mcp_runtime"] = {
+            "ok": False,
+            "path": str(runtime_path),
+            "total": runtime_summary.get("total", 0),
+            "truncated": runtime_summary.get("truncated", False),
+            "hits": runtime_summary.get("hits", []),
+        }
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
     async def _after_initialize_callback(self, task: EvaluationTask) -> None:
         import docker
         import docker.errors
@@ -560,6 +892,16 @@ class CyBinGymOpenSageEvaluation(Evaluation):
             if "already exists" not in message and "already connected" not in message:
                 raise
 
+        preflight_path = Path(task.output_dir) / "mcp_preflight.json"
+        preflight_summary = await self._run_mcp_preflight(
+            task, summary_path=preflight_path
+        )
+        if self.fail_on_mcp_preflight and not preflight_summary.get("ok", False):
+            self._write_mcp_preflight_failure_result(
+                task, preflight_summary, preflight_path
+            )
+            raise MCPPreflightError(preflight_summary)
+
     def _cleanup_task_network(self, task: EvaluationTask) -> None:
         try:
             import docker
@@ -573,7 +915,19 @@ class CyBinGymOpenSageEvaluation(Evaluation):
 
     async def _generate_one(self, task: EvaluationTask) -> dict:
         try:
-            return await super()._generate_one(task)
+            result = await super()._generate_one(task)
+            if self.fail_on_mcp_runtime_error:
+                runtime_summary = self._find_mcp_runtime_failures(task)
+                if not runtime_summary.get("ok", False):
+                    runtime_path = Path(task.output_dir) / "mcp_runtime_failures.json"
+                    runtime_path.write_text(
+                        json.dumps(runtime_summary, indent=2), encoding="utf-8"
+                    )
+                    self._write_mcp_runtime_failure_result(
+                        task, runtime_summary, runtime_path
+                    )
+                    raise MCPRuntimeError(runtime_summary)
+            return result
         finally:
             self._cleanup_task_network(task)
 

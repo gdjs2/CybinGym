@@ -1,0 +1,1 @@
+A vulnerability exists in tcos where the insert_pin() function does not properly check bounds, potentially leading to out-of-bounds access.

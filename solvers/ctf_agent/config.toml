@@ -9,6 +9,7 @@ GDB_MCP_DOCKERFILE = "${GDB_MCP_DOCKERFILE}"
 CYBINGYM_FLAG = "${CYBINGYM_FLAG}"
 DOCKER_NETWORK = "${DOCKER_NETWORK}"
 TASK_NAME = "${TASK_NAME}"
+SESSION_ID = "${SESSION_ID}"
 GDB_PORT = ${GDB_PORT}
 IDA_PRO_MCP_PORT = ${IDA_PRO_MCP_PORT}
 PYGHIDRA_MCP_PORT = ${PYGHIDRA_MCP_PORT}
@@ -72,7 +73,7 @@ CYBERGYM_TARGET_BINARY = "${CYBERGYM_TARGET_BINARY}"
 initializer_timeout_sec = 1800
 
 [sandbox.sandboxes.victim]
-image = "${TASK_NAME}_victim"
+image = "${TASK_NAME}_${SESSION_ID}_victim"
 absolute_dockerfile_path = "${VICTIM_DOCKERFILE}"
 command = ""
 timeout = 300

@@ -1,0 +1,1 @@
+A buffer overflow vulnerability exists in xxhash unserialization due to a lack of validation that memsize is less than 32 bytes.

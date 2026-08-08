@@ -1,0 +1,1 @@
+A use after free vulnerability exists in compound division by zero, where destroying the result operand early can lead to accessing freed memory if the division fails. The division result is not safely handled, risking use after free when the original value needs to be preserved.

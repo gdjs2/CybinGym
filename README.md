@@ -84,11 +84,16 @@ Useful OpenSAGE parameters:
 -T opensage_source_dir=/path/to/opensage-adk
 -T opensage_python=/path/to/python
 -T opensage_output_dir=evals/opensage_inspect
+-T opensage_reasoning_effort=high
 -T opensage_max_workers=10
 -T opensage_timeout=7200
 -T opensage_base_port=20000
 -T opensage_port_stride=10
 ```
+
+`opensage_reasoning_effort` is passed through to SageAgent's LiteLLM model as
+`reasoning_effort` for providers/models that support it. Leave it unset to use
+the provider default.
 
 ## Rerun Filters and History
 

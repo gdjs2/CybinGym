@@ -1,0 +1,1 @@
+The glyf table code accesses maxp version 1 fields without proper guards, leading to uninitialized field access due to the current design where these fields are not initialized for other maxp versions. This can result in undefined behavior when handling fonts with mismatched maxp and glyf/CFF tables.

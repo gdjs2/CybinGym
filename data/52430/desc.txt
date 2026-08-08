@@ -1,0 +1,1 @@
+A vulnerability exists where the code does not keep within the string boundary, possibly due to using 'word' instead of 'st', which can lead to out-of-bounds access.

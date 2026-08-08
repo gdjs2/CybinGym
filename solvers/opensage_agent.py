@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import io
 import json
 import os
 import re
 import socket
 import sys
+import tarfile
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -76,6 +78,7 @@ def _build_env(
     opensage_source_dir: Path,
     opensage_model: str,
     opensage_provider: str,
+    opensage_reasoning_effort: str = "",
     llm_retry_timeout: int | None = None,
     llm_retry_count: int | None = None,
 ) -> dict[str, str]:
@@ -94,6 +97,8 @@ def _build_env(
             env["LITELLM_ROUTE_ALL_CHAT_OPENAI_TO_RESPONSES"] = "true"
     if opensage_provider:
         env["OPENSAGE_PROVIDER"] = opensage_provider
+    if opensage_reasoning_effort:
+        env["OPENSAGE_REASONING_EFFORT"] = opensage_reasoning_effort
     if llm_retry_timeout is not None:
         env["OPENSAGE_LITELLM_TIMEOUT"] = str(int(llm_retry_timeout))
     if llm_retry_count is not None:
@@ -169,19 +174,26 @@ _SESSION_ID_HINT_RE = re.compile(
     r"(?:Created OpenSageSession for session:|for session:?)\s*"
     r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
 )
+_PLACEHOLDER_CONTAINER_ID_RE = re.compile(
+    r"Connected to existing container ([0-9a-f]{12,64}) \(image: alpine:latest\)"
+)
 _OPENSAGE_CONTAINER_PREFIXES = (
     "opensage_main_",
     "opensage_pwn_tools_",
     "opensage_gdb_mcp_",
     "opensage_victim_",
     "opensage_placeholder_",
+    "opensage__placeholder_",
 )
 _FLAG_RE = re.compile(r"flag\{([^{}]+)\}")
 
 
 def _extract_submitted_flag(text: str) -> str:
-    match = _FLAG_RE.search(text or "")
-    return match.group(0) if match else ""
+    for match in _FLAG_RE.finditer(text or ""):
+        inner = match.group(1).strip()
+        if inner and inner not in {"...", "TEST_SECRET"}:
+            return match.group(0)
+    return ""
 
 
 def _read_opensage_summary(output_dir: Path) -> dict[str, Any]:
@@ -200,8 +212,16 @@ def _extract_flag_from_opensage_outputs(output_dir: Path) -> str:
     submitted_flag = str(summary.get("submitted_flag") or "").strip()
     if submitted_flag:
         return submitted_flag
-    for rel in ("session_trace.json", "live_events.jsonl"):
-        path = output_dir / rel
+
+    candidate_paths = [
+        output_dir / "session_trace.json",
+        output_dir / "live_events.jsonl",
+    ]
+    candidate_paths.extend(output_dir.glob("*/session_trace.json"))
+    candidate_paths.extend(output_dir.glob("*/live_events.jsonl"))
+    candidate_paths.extend(output_dir.glob("*/execution_info.log"))
+
+    for path in candidate_paths:
         if not path.exists():
             continue
         try:
@@ -252,27 +272,135 @@ def _extract_opensage_session_ids(output_dir: Path) -> list[str]:
     return hinted_session_ids or fallback_session_ids
 
 
+def _extract_opensage_placeholder_container_ids(output_dir: Path) -> list[str]:
+    container_ids: list[str] = []
+    for log_name in (
+        "evaluation_master.log",
+        "opensage_stdout.log",
+        "opensage_stderr.log",
+    ):
+        log_path = output_dir / log_name
+        if not log_path.exists():
+            continue
+        try:
+            text = log_path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        for match in _PLACEHOLDER_CONTAINER_ID_RE.finditer(text):
+            container_id = match.group(1)
+            if container_id not in container_ids:
+                container_ids.append(container_id)
+    return container_ids
+
+
+def _salvage_poc_crash_from_shared_volume(
+    *,
+    client: Any,
+    volume_name: str,
+    output_dir: Path,
+) -> dict[str, Any]:
+    status: dict[str, Any] = {
+        "volume": volume_name,
+        "ok": False,
+        "path": str(output_dir / "poc_crash"),
+    }
+    poc_path = output_dir / "poc_crash"
+    if poc_path.exists():
+        status["ok"] = True
+        status["already_exists"] = True
+        return status
+
+    container = None
+    try:
+        helper_image = "alpine:latest"
+        helper_name = f"cybingym_poc_extract_{volume_name}"
+        try:
+            stale = client.containers.get(helper_name)
+            stale.remove(force=True)
+        except Exception:
+            pass
+
+        container = client.containers.create(
+            helper_image,
+            name=helper_name,
+            command=["sh", "-c", "sleep 30"],
+            volumes={volume_name: {"bind": "/data", "mode": "ro"}},
+        )
+        container.start()
+        test_result = container.exec_run(["test", "-f", "/data/poc_crash"])
+        if test_result.exit_code != 0:
+            status["error"] = "poc_crash not present in shared volume"
+            return status
+
+        stream, _ = container.get_archive("/data/poc_crash")
+        tar_bytes = b"".join(stream)
+        with tarfile.open(fileobj=io.BytesIO(tar_bytes)) as tar:
+            member = tar.getmembers()[0]
+            fileobj = tar.extractfile(member)
+            if fileobj is None:
+                status["error"] = "failed to extract poc_crash from archive"
+                return status
+            poc_path.write_bytes(fileobj.read())
+
+        status["ok"] = True
+        status["bytes"] = poc_path.stat().st_size
+        return status
+    except Exception as exc:
+        status["error"] = f"{type(exc).__name__}: {exc}"
+        return status
+    finally:
+        if container is not None:
+            try:
+                container.remove(force=True)
+            except Exception:
+                pass
+
+
 def _cleanup_opensage_artifacts(output_dir: Path) -> dict[str, Any]:
     session_ids = _extract_opensage_session_ids(output_dir)
+    placeholder_container_ids = _extract_opensage_placeholder_container_ids(output_dir)
     status: dict[str, Any] = {
         "session_ids": session_ids,
+        "placeholder_container_ids": placeholder_container_ids,
+        "poc_crash_salvage": [],
         "containers_removed": [],
         "volumes_removed": [],
         "networks_removed": [],
         "errors": [],
     }
-    if not session_ids:
+    if not session_ids and not placeholder_container_ids:
         return status
 
     try:
         import docker
 
         client = docker.from_env(timeout=10)
+        for session_id in session_ids:
+            volume_name = f"{session_id}_shared"
+            try:
+                client.volumes.get(volume_name)
+            except Exception:
+                continue
+            status["poc_crash_salvage"].append(
+                _salvage_poc_crash_from_shared_volume(
+                    client=client,
+                    volume_name=volume_name,
+                    output_dir=output_dir,
+                )
+            )
+
         for container in client.containers.list(all=True):
             name = getattr(container, "name", "")
-            if not name.startswith(_OPENSAGE_CONTAINER_PREFIXES):
-                continue
-            if not any(session_id in name for session_id in session_ids):
+            container_id = getattr(container, "id", "")
+            name_matches = name.startswith(_OPENSAGE_CONTAINER_PREFIXES) and any(
+                session_id in name for session_id in session_ids
+            )
+            placeholder_matches = any(
+                container_id.startswith(placeholder_id)
+                or placeholder_id.startswith(container_id[:12])
+                for placeholder_id in placeholder_container_ids
+            )
+            if not name_matches and not placeholder_matches:
                 continue
             try:
                 container.remove(force=True)
@@ -380,6 +508,7 @@ async def _run_opensage(
     opensage_python: Path,
     opensage_model: str,
     opensage_provider: str,
+    opensage_reasoning_effort: str,
     ports: dict[str, int],
     max_llm_calls: int,
     max_workers: int,
@@ -423,6 +552,8 @@ async def _run_opensage(
             str(llm_retry_timeout),
             "--llm_retry_count",
             str(llm_retry_count),
+            "--reasoning_effort",
+            str(opensage_reasoning_effort),
             "--non_interactive",
             "True",
             "--gdb_port",
@@ -440,15 +571,21 @@ async def _run_opensage(
             opensage_source_dir=opensage_source_dir,
             opensage_model=opensage_model,
             opensage_provider=opensage_provider,
+            opensage_reasoning_effort=opensage_reasoning_effort,
             llm_retry_timeout=llm_retry_timeout,
             llm_retry_count=llm_retry_count,
         )
         process_status: dict[str, Any] = {
             "bridge_timeout_seconds": int(timeout),
             "bridge_cleanup_grace_seconds": int(cleanup_grace),
-            "bridge_wait_timeout_seconds": int(timeout) + max(0, int(cleanup_grace)),
+            "bridge_wait_timeout_seconds": (
+                None
+                if int(timeout) <= 0
+                else int(timeout) + max(0, int(cleanup_grace))
+            ),
             "llm_retry_timeout": int(llm_retry_timeout),
             "llm_retry_count": int(llm_retry_count),
+            "reasoning_effort": opensage_reasoning_effort,
             "outer_timeout": False,
         }
         with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
@@ -491,6 +628,7 @@ def opensage_solver(
     opensage_source_dir: str = str(DEFAULT_OPENSAGE_SOURCE_DIR),
     opensage_model: str = "",
     opensage_provider: str = "",
+    opensage_reasoning_effort: str = "",
     base_port: int = 20000,
     port_stride: int = 10,
 ) -> Solver:
@@ -520,6 +658,9 @@ def opensage_solver(
         }
         model_name = opensage_model or str(state.model)
         provider_name = opensage_provider or _infer_opensage_provider(model_name)
+        reasoning_effort = str(
+            opensage_reasoning_effort or os.environ.get("OPENSAGE_REASONING_EFFORT", "")
+        ).strip()
         bridge_status_path = sample_output_dir / "opensage_bridge_status.json"
         bridge_status: dict[str, Any] = {
             "sample_id": sample_id,
@@ -527,6 +668,7 @@ def opensage_solver(
             "queued_at": _now_iso(),
             "model": model_name,
             "provider": provider_name,
+            "reasoning_effort": reasoning_effort,
             "bridge_max_workers": worker_limit,
             "runner_max_workers": int(max_workers),
             "bridge_timeout_seconds": int(timeout),
@@ -566,6 +708,7 @@ def opensage_solver(
                     opensage_python=Path(opensage_python).expanduser(),
                     opensage_model=model_name,
                     opensage_provider=provider_name,
+                    opensage_reasoning_effort=reasoning_effort,
                     ports=ports,
                     max_llm_calls=max_llm_calls,
                     max_workers=max_workers,

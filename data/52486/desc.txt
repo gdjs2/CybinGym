@@ -1,0 +1,1 @@
+A vulnerability exists where, after restoring to oldi and orig str, the len variable is not reset, potentially leading to incorrect behavior.

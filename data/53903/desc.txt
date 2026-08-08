@@ -1,0 +1,1 @@
+A vulnerability exists where memory devices are allowed to change media sizes, resolutions, or other parameters that affect the size of the raster memory allocation.

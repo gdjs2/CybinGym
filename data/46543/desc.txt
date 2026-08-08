@@ -1,0 +1,1 @@
+A vulnerability exists in subparse where, if the length of the string is 0, the code attempts to access str[len - 1], which resolves to str[-1]. This results in an invalid string index.

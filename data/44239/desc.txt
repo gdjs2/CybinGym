@@ -1,0 +1,1 @@
+A vulnerability occurs when using the new Sequence Compression API in Explicit Delimiter Mode with a too small dstCapacity, where there is a place in the code where the buffer size is not checked.

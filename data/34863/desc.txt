@@ -1,0 +1,1 @@
+Utf8CodePointIterator outputs the full string to debug output when encountering an invalid code point, which can significantly slow down the system for large strings. Additionally, one case incorrectly assumes the data is null terminated.

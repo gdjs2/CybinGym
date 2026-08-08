@@ -1,0 +1,1 @@
+A heap-buffer-overflow occurs when reading the frame index chunk in the code, leading to a security vulnerability.

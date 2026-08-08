@@ -1,0 +1,1 @@
+When HAVE_FMEMOPEN is defined, the written data is not terminated with '\0', so using strlen on it causes a buffer overrun due to use of an uninitialized value.

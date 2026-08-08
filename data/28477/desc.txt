@@ -1,0 +1,1 @@
+A vulnerability exists in gdatetime where NAN is allowed as a number of seconds in a GDateTime. Since NAN never compares TRUE against anything, the limit checks `seconds < 0.0 || seconds >= 60.0` do not trigger, allowing invalid values to pass through.

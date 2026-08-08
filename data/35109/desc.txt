@@ -1,0 +1,1 @@
+A vulnerability exists in sprintf.c where value range is not checked before type casting.

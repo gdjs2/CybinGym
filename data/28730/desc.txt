@@ -1,0 +1,1 @@
+A heap buffer overflow occurs in the idn component due to lack of index checking before use.

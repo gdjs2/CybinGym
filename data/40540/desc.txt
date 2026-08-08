@@ -1,0 +1,1 @@
+The vulnerability occurs in the subset functionality where input validation is missing, allowing cases where not every gid has a corresponding offset value in the map.

@@ -1,0 +1,1 @@
+The gdate component does not validate input as UTF-8 before parsing, allowing non-UTF-8 data to be processed. Dates are expected to be valid UTF-8.

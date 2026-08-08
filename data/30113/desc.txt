@@ -1,0 +1,1 @@
+A vulnerability exists in which the code attempts to read usermeta past the frame, triggering an ASAN sanitizer check.

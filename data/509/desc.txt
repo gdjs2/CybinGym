@@ -1,0 +1,1 @@
+A vulnerability exists in the MVAR post-action handling in src/truetype/ttobjs.c, where the function tt_size_reset does not properly handle CFF2. This affects the correct operation of tt_size_reset_iterator when called in tt_apply_mvar.
