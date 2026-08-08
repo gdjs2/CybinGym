@@ -40,6 +40,7 @@ def _default_opensage_python() -> Path:
 DEFAULT_OPENSAGE_PYTHON = _default_opensage_python()
 _PORT_LOCK = asyncio.Lock()
 _RESERVED_PORTS: set[int] = set()
+_MCP_PORT_ARGS = {"--gdb_port", "--ida_pro_mcp_port", "--pyghidra_mcp_port"}
 RUNNER_TERMINATE_GRACE_SECONDS = 30
 STALE_INSPECT_NETWORK_WARNING_THRESHOLD = 10
 _FALSE_ENV_VALUES = {"0", "false", "no", "off"}
@@ -124,6 +125,59 @@ def _port_is_available(port: int) -> bool:
     return True
 
 
+def _listening_tcp_ports() -> set[int]:
+    ports: set[int] = set()
+    for proc_net_path in (Path("/proc/net/tcp"), Path("/proc/net/tcp6")):
+        try:
+            lines = proc_net_path.read_text(encoding="ascii", errors="ignore").splitlines()
+        except OSError:
+            continue
+        for line in lines[1:]:
+            fields = line.split()
+            if len(fields) < 4 or fields[3] != "0A":
+                continue
+            try:
+                ports.add(int(fields[1].split(":", 1)[1], 16))
+            except (IndexError, ValueError):
+                continue
+    return ports
+
+
+def _active_opensage_runner_ports() -> set[int]:
+    ports: set[int] = set()
+    proc_root = Path("/proc")
+    try:
+        pid_dirs = list(proc_root.iterdir())
+    except OSError:
+        return ports
+
+    for pid_dir in pid_dirs:
+        if not pid_dir.name.isdigit():
+            continue
+        try:
+            raw_cmdline = (pid_dir / "cmdline").read_bytes()
+        except OSError:
+            continue
+        if b"solvers.opensage_cybingym_runner" not in raw_cmdline:
+            continue
+
+        argv = [part.decode(errors="ignore") for part in raw_cmdline.split(b"\0") if part]
+        for index, arg in enumerate(argv):
+            if arg in _MCP_PORT_ARGS and index + 1 < len(argv):
+                try:
+                    ports.add(int(argv[index + 1]))
+                except ValueError:
+                    pass
+            else:
+                name, sep, value = arg.partition("=")
+                if sep and name in _MCP_PORT_ARGS:
+                    try:
+                        ports.add(int(value))
+                    except ValueError:
+                        pass
+    return ports
+
+
 async def _reserve_port_block(base_port: int, port_stride: int) -> dict[str, int]:
     if base_port <= 0:
         raise ValueError("opensage_base_port must be positive")
@@ -131,6 +185,7 @@ async def _reserve_port_block(base_port: int, port_stride: int) -> dict[str, int
         raise ValueError("opensage_port_stride must be at least 3")
 
     async with _PORT_LOCK:
+        externally_used_ports = _listening_tcp_ports() | _active_opensage_runner_ports()
         for slot in range(1000):
             start = base_port + slot * port_stride
             ports = {
@@ -140,6 +195,8 @@ async def _reserve_port_block(base_port: int, port_stride: int) -> dict[str, int
             }
             values = set(ports.values())
             if values & _RESERVED_PORTS:
+                continue
+            if values & externally_used_ports:
                 continue
             if not all(_port_is_available(port) for port in values):
                 continue
@@ -186,13 +243,103 @@ _OPENSAGE_CONTAINER_PREFIXES = (
     "opensage__placeholder_",
 )
 _FLAG_RE = re.compile(r"flag\{([^{}]+)\}")
+_PLACEHOLDER_FLAG_VALUES = {"...", "TEST_SECRET"}
+_USER_EVENT_AUTHORS = {"user", "__user__"}
 
 
 def _extract_submitted_flag(text: str) -> str:
     for match in _FLAG_RE.finditer(text or ""):
         inner = match.group(1).strip()
-        if inner and inner not in {"...", "TEST_SECRET"}:
+        if inner and inner not in _PLACEHOLDER_FLAG_VALUES:
             return match.group(0)
+    return ""
+
+
+def _iter_string_values(value: Any):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from _iter_string_values(item)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            yield from _iter_string_values(item)
+
+
+def _iter_event_content_strings(content: Any):
+    if isinstance(content, dict) and isinstance(content.get("parts"), list):
+        for part in content["parts"]:
+            if not isinstance(part, dict):
+                yield from _iter_string_values(part)
+            elif "text" in part:
+                yield from _iter_string_values(part["text"])
+            elif "function_response" in part:
+                yield from _iter_string_values(part["function_response"])
+        return
+    yield from _iter_string_values(content)
+
+
+def _extract_submitted_flag_from_event(event: Any) -> str:
+    if not isinstance(event, dict):
+        return ""
+    author = str(
+        event.get("author")
+        or event.get("from_agent_name")
+        or event.get("from_sid")
+        or ""
+    ).strip()
+    if author in _USER_EVENT_AUTHORS:
+        return ""
+    if "content" not in event:
+        return ""
+    for text in _iter_event_content_strings(event.get("content")):
+        submitted_flag = _extract_submitted_flag(text)
+        if submitted_flag:
+            return submitted_flag
+    return ""
+
+
+def _extract_submitted_flag_from_json_payload(payload: Any) -> str:
+    if isinstance(payload, dict):
+        events = payload.get("events")
+        if isinstance(events, list):
+            for event in events:
+                submitted_flag = _extract_submitted_flag_from_event(event)
+                if submitted_flag:
+                    return submitted_flag
+            return ""
+        return _extract_submitted_flag_from_event(payload)
+    if isinstance(payload, list):
+        for item in payload:
+            submitted_flag = _extract_submitted_flag_from_json_payload(item)
+            if submitted_flag:
+                return submitted_flag
+    return ""
+
+
+def _extract_submitted_flag_from_json_file(path: Path) -> str:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return ""
+    return _extract_submitted_flag_from_json_payload(payload)
+
+
+def _extract_submitted_flag_from_jsonl_file(path: Path) -> str:
+    try:
+        lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+    except OSError:
+        return ""
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            payload = json.loads(line)
+        except Exception:
+            continue
+        submitted_flag = _extract_submitted_flag_from_json_payload(payload)
+        if submitted_flag:
+            return submitted_flag
     return ""
 
 
@@ -209,38 +356,36 @@ def _read_opensage_summary(output_dir: Path) -> dict[str, Any]:
 
 def _extract_flag_from_opensage_outputs(output_dir: Path) -> str:
     summary = _read_opensage_summary(output_dir)
-    submitted_flag = str(summary.get("submitted_flag") or "").strip()
+    submitted_flag = _extract_submitted_flag(str(summary.get("submitted_flag") or ""))
     if submitted_flag:
         return submitted_flag
 
-    candidate_paths = [
-        output_dir / "session_trace.json",
-        output_dir / "live_events.jsonl",
-    ]
-    candidate_paths.extend(output_dir.glob("*/session_trace.json"))
-    candidate_paths.extend(output_dir.glob("*/live_events.jsonl"))
-    candidate_paths.extend(output_dir.glob("*/execution_info.log"))
+    json_paths = [output_dir / "session_trace.json"]
+    json_paths.extend(output_dir.glob("*/session_trace.json"))
+    jsonl_paths = [output_dir / "live_events.jsonl"]
+    jsonl_paths.extend(output_dir.glob("*/live_events.jsonl"))
 
-    for path in candidate_paths:
+    for path in json_paths:
         if not path.exists():
             continue
-        try:
-            submitted_flag = _extract_submitted_flag(
-                path.read_text(encoding="utf-8", errors="ignore")
-            )
-        except OSError:
-            submitted_flag = ""
+        submitted_flag = _extract_submitted_flag_from_json_file(path)
         if submitted_flag:
             return submitted_flag
+    for path in jsonl_paths:
+        if not path.exists():
+            continue
+        submitted_flag = _extract_submitted_flag_from_jsonl_file(path)
+        if submitted_flag:
+            return submitted_flag
+
     instances_dir = output_dir / "instances"
     if instances_dir.exists():
         for path in instances_dir.rglob("*.json"):
-            try:
-                submitted_flag = _extract_submitted_flag(
-                    path.read_text(encoding="utf-8", errors="ignore")
-                )
-            except OSError:
-                submitted_flag = ""
+            submitted_flag = _extract_submitted_flag_from_json_file(path)
+            if submitted_flag:
+                return submitted_flag
+        for path in instances_dir.rglob("*.jsonl"):
+            submitted_flag = _extract_submitted_flag_from_jsonl_file(path)
             if submitted_flag:
                 return submitted_flag
     return ""
@@ -374,12 +519,32 @@ def _cleanup_opensage_artifacts(output_dir: Path) -> dict[str, Any]:
     try:
         import docker
 
-        client = docker.from_env(timeout=10)
+        cleanup_timeout = int(os.environ.get("OPENSAGE_DOCKER_CLEANUP_TIMEOUT", "60"))
+        client = docker.from_env(timeout=cleanup_timeout)
+        poc_path = output_dir / "poc_crash"
         for session_id in session_ids:
             volume_name = f"{session_id}_shared"
+            if poc_path.exists():
+                status["poc_crash_salvage"].append(
+                    {
+                        "volume": volume_name,
+                        "ok": True,
+                        "path": str(poc_path),
+                        "already_exists": True,
+                    }
+                )
+                continue
             try:
                 client.volumes.get(volume_name)
-            except Exception:
+            except Exception as exc:
+                status["poc_crash_salvage"].append(
+                    {
+                        "volume": volume_name,
+                        "ok": False,
+                        "path": str(output_dir / "poc_crash"),
+                        "error": f"volume lookup: {type(exc).__name__}: {exc}",
+                    }
+                )
                 continue
             status["poc_crash_salvage"].append(
                 _salvage_poc_crash_from_shared_volume(
@@ -436,6 +601,83 @@ def _cleanup_opensage_artifacts(output_dir: Path) -> dict[str, Any]:
         status["errors"].append(f"docker cleanup: {type(exc).__name__}: {exc}")
 
     return status
+
+
+def _has_recoverable_poc_crash(output_dir: Path) -> bool:
+    return (output_dir / "poc_crash").exists()
+
+
+def _uncancel_current_task() -> None:
+    current_task = asyncio.current_task()
+    if current_task is None or not hasattr(current_task, "uncancel"):
+        return
+    while current_task.cancelling():
+        current_task.uncancel()
+
+
+async def _import_opensage_outputs_into_state(
+    *,
+    state: TaskState,
+    sample_output_dir: Path,
+    bridge_status: dict[str, Any],
+    bridge_status_path: Path,
+    returncode: int,
+    ports: dict[str, int],
+    stdout_path: Path,
+    stderr_path: Path,
+    interrupted: bool = False,
+) -> TaskState:
+    poc_path = sample_output_dir / "poc_crash"
+    poc_exists = poc_path.exists()
+    submitted_flag = _extract_flag_from_opensage_outputs(sample_output_dir)
+    bridge_status["submitted_flag"] = submitted_flag
+
+    if poc_exists:
+        await sandbox().write_file("poc_crash", poc_path.read_bytes())
+        bridge_status["poc_crash_exists"] = True
+        bridge_status["poc_crash_copied_to_inspect_sandbox"] = True
+        bridge_status["poc_exists"] = True
+        bridge_status["poc_copied_to_inspect_sandbox"] = True
+        if interrupted:
+            bridge_status["cancelled_artifacts_imported"] = True
+            bridge_status["status"] = "cancelled_artifacts_imported"
+        _write_bridge_status(bridge_status_path, bridge_status)
+        message = (
+            "OpenSAGE generated poc_crash and it was copied into the Inspect sandbox.\n"
+            f"Return code: {returncode}\n"
+            f"OpenSAGE output: {sample_output_dir}\n"
+            f"MCP ports: {ports}"
+        )
+        if interrupted:
+            message = (
+                "OpenSAGE was interrupted after generating poc_crash; the bridge "
+                f"recovered the artifact and copied it into the Inspect sandbox.\n"
+                f"Return code: {returncode}\n"
+                f"OpenSAGE output: {sample_output_dir}\n"
+                f"MCP ports: {ports}"
+            )
+    else:
+        bridge_status["poc_crash_exists"] = False
+        bridge_status["poc_crash_copied_to_inspect_sandbox"] = False
+        bridge_status["poc_exists"] = False
+        bridge_status["poc_copied_to_inspect_sandbox"] = False
+        _write_bridge_status(bridge_status_path, bridge_status)
+        message = (
+            "OpenSAGE did not produce poc_crash for this sample.\n"
+            f"Return code: {returncode}\n"
+            f"OpenSAGE output: {sample_output_dir}\n"
+            f"MCP ports: {ports}\n"
+            f"stdout: {stdout_path}\n"
+            f"stderr: {stderr_path}"
+        )
+    if submitted_flag:
+        message = f"{message}\nSubmitted flag: {submitted_flag}"
+
+    state.messages.append(
+        ChatMessageAssistant(content=message, model="opensage-bridge")
+    )
+    state.completed = True
+    return state
 
 
 def _stale_inspect_network_warning() -> str | None:
@@ -618,7 +860,7 @@ def opensage_solver(
     opensage_agent_dir: str = str(DEFAULT_OPENSAGE_AGENT_DIR),
     binary_analysis_agent_dir: str | None = None,
     output_dir: str = "",
-    max_llm_calls: int = 400,
+    max_llm_calls: int = 600,
     max_workers: int = 10,
     timeout: int = 7200,
     cleanup_grace: int = 900,
@@ -685,6 +927,7 @@ def opensage_solver(
         returncode = -1
         stdout_path = sample_output_dir / "opensage_stdout.log"
         stderr_path = sample_output_dir / "opensage_stderr.log"
+        was_cancelled = False
         async with run_semaphore:
             bridge_status.update(
                 {
@@ -723,9 +966,9 @@ def opensage_solver(
                     "outer_timeout" if runner_status.get("outer_timeout") else "finished"
                 )
             except asyncio.CancelledError:
+                was_cancelled = True
                 bridge_status["status"] = "cancelled"
                 bridge_status["cancelled_at"] = _now_iso()
-                raise
             except Exception as exc:
                 bridge_status["status"] = "error"
                 bridge_status["error"] = f"{type(exc).__name__}: {exc}"
@@ -739,44 +982,21 @@ def opensage_solver(
                 bridge_status["finished_at"] = _now_iso()
                 _write_bridge_status(bridge_status_path, bridge_status)
 
-        poc_path = sample_output_dir / "poc_crash"
-        poc_exists = poc_path.exists()
-        submitted_flag = _extract_flag_from_opensage_outputs(sample_output_dir)
-        bridge_status["submitted_flag"] = submitted_flag
-        if poc_exists:
-            await sandbox().write_file("poc_crash", poc_path.read_bytes())
-            bridge_status["poc_crash_exists"] = True
-            bridge_status["poc_crash_copied_to_inspect_sandbox"] = True
-            bridge_status["poc_exists"] = True
-            bridge_status["poc_copied_to_inspect_sandbox"] = True
-            _write_bridge_status(bridge_status_path, bridge_status)
-            message = (
-                "OpenSAGE generated poc_crash and it was copied into the Inspect sandbox.\n"
-                f"Return code: {returncode}\n"
-                f"OpenSAGE output: {sample_output_dir}\n"
-                f"MCP ports: {ports}"
-            )
-        else:
-            bridge_status["poc_crash_exists"] = False
-            bridge_status["poc_crash_copied_to_inspect_sandbox"] = False
-            bridge_status["poc_exists"] = False
-            bridge_status["poc_copied_to_inspect_sandbox"] = False
-            _write_bridge_status(bridge_status_path, bridge_status)
-            message = (
-                "OpenSAGE did not produce poc_crash for this sample.\n"
-                f"Return code: {returncode}\n"
-                f"OpenSAGE output: {sample_output_dir}\n"
-                f"MCP ports: {ports}\n"
-                f"stdout: {stdout_path}\n"
-                f"stderr: {stderr_path}"
-            )
-        if submitted_flag:
-            message = f"{message}\nSubmitted flag: {submitted_flag}"
+        if was_cancelled:
+            if not _has_recoverable_poc_crash(sample_output_dir):
+                raise asyncio.CancelledError()
+            _uncancel_current_task()
 
-        state.messages.append(
-            ChatMessageAssistant(content=message, model="opensage-bridge")
+        return await _import_opensage_outputs_into_state(
+            state=state,
+            sample_output_dir=sample_output_dir,
+            bridge_status=bridge_status,
+            bridge_status_path=bridge_status_path,
+            returncode=returncode,
+            ports=ports,
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+            interrupted=was_cancelled,
         )
-        state.completed = True
-        return state
 
     return solve
