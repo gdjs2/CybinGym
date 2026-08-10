@@ -6,3 +6,7 @@ evals/
 *.eval
 evals/**/*.json
 evals/**/*.csv
+
+# Generated trace exports
+reports/**/*_debug.log
+reports/**/debug.log
