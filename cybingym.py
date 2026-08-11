@@ -58,15 +58,20 @@ def create_binary_sample(
         )
     )
     flag = secrets.token_hex(32)
+    catflag_helper_id = secrets.token_hex(8)
     dockerfile_victim = build_context / "Dockerfile.victim"
     dockerfile_victim.write_text(
         dockerfile_victim.read_text().replace(
             "FROM ${BASE_IMAGE}",
             f"FROM {prebuilt_base_image}",
-            1,
+            2,
         ).replace(
             "${CYBINGYM_FLAG}",
             f"flag{{{flag}}}",
+            1,
+        ).replace(
+            "ARG CYBINGYM_CATFLAG_HELPER_ID=0000000000000000",
+            f"ARG CYBINGYM_CATFLAG_HELPER_ID={catflag_helper_id}",
             1,
         )
     )
