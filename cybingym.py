@@ -76,33 +76,145 @@ def create_binary_sample(
         )
     )
 
+    proxy_env = {
+        # HTTP proxy used by curl/wget/apt/pip/etc.
+        "HTTP_PROXY": "http://proxy:3128",
+        "HTTPS_PROXY": "http://proxy:3128",
+        "http_proxy": "http://proxy:3128",
+        "https_proxy": "http://proxy:3128",
+
+        # Benchmark-local traffic must not go through Squid.
+        "NO_PROXY": "localhost,127.0.0.1,target,victim,proxy",
+        "no_proxy": "localhost,127.0.0.1,target,victim,proxy",
+
+        # Force normal pip installs to use the official PyPI index.
+        "PIP_INDEX_URL": "https://pypi.org/simple",
+    }
+
+
     config = ComposeConfig(
-        services = {
+        services={
             "default": ComposeService(
-                build = ComposeBuild(
-                    context = str(build_context),
-                    dockerfile = "Dockerfile.default",
+                build=ComposeBuild(
+                    context=str(build_context),
+                    dockerfile="Dockerfile.default",
                 ),
-                init = True,
-                command = "tail -f /dev/null",
+                init=True,
+                command="tail -f /dev/null",
+
+                networks=[
+                    "benchmark_net",
+                    "proxy_net",
+                ],
+
+                environment=proxy_env, # type: ignore
+
+                depends_on=[
+                    "proxy",
+                ],
             ),
+
             "target": ComposeService(
-                build = ComposeBuild(
-                    context = str(build_context),
-                    dockerfile = "Dockerfile.target",
+                build=ComposeBuild(
+                    context=str(build_context),
+                    dockerfile="Dockerfile.target",
                 ),
-                init = True,
-                command = "tail -f /dev/null",
+                init=True,
+                command="tail -f /dev/null",
+
+                networks=[
+                    "benchmark_net",
+                    "proxy_net",
+                ],
+
+                environment=proxy_env, # type: ignore
+
+                depends_on=[
+                    "proxy",
+                ],
             ),
+
             "victim": ComposeService(
-                build = ComposeBuild(
-                    context = str(build_context),
-                    dockerfile = "Dockerfile.victim",
+                build=ComposeBuild(
+                    context=str(build_context),
+                    dockerfile="Dockerfile.victim",
                 ),
-                init = True,
-            )
-        }
+                init=True,
+
+                # Can communicate with default/target,
+                # but has no Internet and cannot reach proxy.
+                networks=[
+                    "benchmark_net",
+                ],
+            ),
+
+            "proxy": ComposeService(
+                build=ComposeBuild(
+                    context=str(build_context),
+                    dockerfile="Dockerfile.proxy",
+                ),
+                init=True,
+
+                # One isolated side facing default,
+                # one side facing the Internet.
+                networks=[
+                    "proxy_net",
+                    "internet_net",
+                ],
+
+                expose=[
+                    3128,
+                ],
+            ),
+        },
+
+        networks={
+            # default <-> target <-> victim
+            # No external network route.
+            "benchmark_net": {
+                "internal": True,
+            },
+
+            # default <-> squid
+            # Also no external network route.
+            "proxy_net": {
+                "internal": True,
+            },
+
+            # Only Squid is attached to this network.
+            "internet_net": {
+                "driver": "bridge",
+            },
+        },
     )
+
+    # config = ComposeConfig(
+    #     services = {
+    #         "default": ComposeService(
+    #             build = ComposeBuild(
+    #                 context = str(build_context),
+    #                 dockerfile = "Dockerfile.default",
+    #             ),
+    #             init = True,
+    #             command = "tail -f /dev/null",
+    #         ),
+    #         "target": ComposeService(
+    #             build = ComposeBuild(
+    #                 context = str(build_context),
+    #                 dockerfile = "Dockerfile.target",
+    #             ),
+    #             init = True,
+    #             command = "tail -f /dev/null",
+    #         ),
+    #         "victim": ComposeService(
+    #             build = ComposeBuild(
+    #                 context = str(build_context),
+    #                 dockerfile = "Dockerfile.victim",
+    #             ),
+    #             init = True,
+    #         )
+    #     }
+    # )
 
     sandbox_spec = SandboxEnvironmentSpec(
         type="docker",

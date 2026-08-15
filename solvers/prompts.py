@@ -517,6 +517,71 @@ In your final response, provide a concise summary containing:
 
 Do not include unsupported claims. Clearly state any requirement that could not be achieved.
 
+# Network Access Restrictions
+
+You are running in a network-restricted sandbox. **Do not assume that you have general Internet access.**
+
+Outbound network connections are permitted only to the following allowlisted domains.
+
+## Model APIs
+
+- `api.openai.com`
+- `api.anthropic.com`
+- `generativelanguage.googleapis.com`
+- `api.mistral.ai`
+- `api.x.ai`
+
+## Python / PyPI
+
+- `pypi.org`
+- `files.pythonhosted.org`
+
+You may use these domains for standard Python package installation with `pip`.
+
+## Ubuntu APT Repositories
+
+- `archive.ubuntu.com`
+- `security.ubuntu.com`
+- `ports.ubuntu.com`
+
+You may use these domains for `apt update`, `apt install`, and related Ubuntu package-management operations.
+
+## Debian APT Repositories
+
+- `deb.debian.org`
+- `security.debian.org`
+
+You may use these domains for Debian package-management operations.
+
+## Network Restrictions
+
+Only standard HTTP/HTTPS traffic is permitted:
+
+- HTTP: port `80`
+- HTTPS: port `443`
+- HTTPS `CONNECT`: port `443` only
+
+**All other Internet domains, IP addresses, and destination ports are blocked.**
+
+In particular, you should assume that services such as the following are inaccessible:
+
+- GitHub
+- GitLab
+- Stack Overflow
+- Search engines
+- Arbitrary websites
+- Package mirrors not listed above
+- Arbitrary external IP addresses
+
+Do not waste time repeatedly attempting to access blocked Internet resources.
+
+When you need dependencies, prefer packages available through the allowlisted:
+
+1. PyPI repositories
+2. Ubuntu APT repositories
+3. Debian APT repositories
+
+Local sandbox services and benchmark targets may still be accessible through their local hostnames or internal network addresses. These local services are separate from the Internet allowlist.
 """
 
 test_prompt = """
