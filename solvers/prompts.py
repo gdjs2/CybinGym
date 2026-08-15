@@ -534,6 +534,9 @@ Outbound network connections are permitted only to the following allowlisted dom
 - `generativelanguage.googleapis.com`
 - `api.mistral.ai`
 - `api.x.ai`
+- `api.moonshot.ai`
+- `api.moonshot.cn`
+- `api.kimi.com`
 
 ## Python / PyPI
 
