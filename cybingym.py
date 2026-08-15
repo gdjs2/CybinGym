@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from scorer import cybingym_scorer
+from scorer import cybingym_crash_scorer, cybingym_scorer
 from solvers.opensage_history import (
     build_opensage_history,
     filter_histories,
@@ -28,6 +28,8 @@ from inspect_ai.util import (
 )
 
 MAXIMUM_ATTEMPTS = 1
+EVALUATION_LEVELS = {"crash", "full"}
+CRASH_ONLY_AGENT_TYPES = {"claude_code", "codex", "kimi_code"}
 OPENSAGE_SMOKE_SAMPLE_IDS = "10013,10055,10096"
 CYBINGYM_DIR = Path(__file__).resolve().parent
 DEFAULT_OPENSAGE_AGENT_DIR = str(CYBINGYM_DIR / "solvers" / "ctf_agent")
@@ -35,6 +37,7 @@ DEFAULT_OPENSAGE_SOURCE_DIR = os.environ.get(
     "OPENSAGE_SOURCE_DIR",
     str(CYBINGYM_DIR.parent / "opensage-adk-dev"),
 )
+
 def _default_opensage_python() -> str:
     configured = os.environ.get("OPENSAGE_PYTHON")
     if configured:
@@ -61,6 +64,16 @@ def _clean_str(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def _normalize_evaluation_level(evaluation_level: str) -> str:
+    normalized = (evaluation_level or "full").strip().lower()
+    if normalized not in EVALUATION_LEVELS:
+        raise ValueError(
+            "evaluation_level must be one of "
+            f"{sorted(EVALUATION_LEVELS)}, got {evaluation_level!r}"
+        )
+    return normalized
 
 
 def _infer_provider(model_name: str) -> str:
@@ -94,6 +107,7 @@ def _resolve_history_model(*, opensage_history_model: str, opensage_model: str) 
 def _select_solver(
     *,
     agent_type: str,
+    kimi_code_version: str,
     opensage_agent_dir: str,
     opensage_output_dir: str,
     opensage_max_llm_calls: int,
@@ -108,8 +122,10 @@ def _select_solver(
     opensage_provider: str,
     opensage_reasoning_effort: str,
     opensage_artifact_collection_mode: str,
+    opensage_extend_from_run_dir: str,
     opensage_base_port: int,
     opensage_port_stride: int,
+    evaluation_level: str,
 ):
     if agent_type == "openai":
         from solvers.openai_agent import openai_agent
@@ -118,11 +134,15 @@ def _select_solver(
     if agent_type == "claude_code":
         from solvers.swe_agents import claude_code_solver
 
-        return claude_code_solver()
+        return claude_code_solver(evaluation_level=evaluation_level)
     if agent_type == "codex":
         from solvers.swe_agents import codex_cli_solver
 
-        return codex_cli_solver()
+        return codex_cli_solver(evaluation_level=evaluation_level)
+    if agent_type == "kimi_code":
+        from solvers.swe_agents import kimi_code_solver
+
+        return kimi_code_solver(version=kimi_code_version, evaluation_level=evaluation_level)
     if agent_type == "opensage":
         from solvers.opensage_agent import opensage_solver
 
@@ -141,6 +161,7 @@ def _select_solver(
             opensage_provider=opensage_provider,
             opensage_reasoning_effort=opensage_reasoning_effort,
             artifact_collection_mode=opensage_artifact_collection_mode,
+            extend_from_run_dir=opensage_extend_from_run_dir,
             base_port=opensage_base_port,
             port_stride=opensage_port_stride,
         )
@@ -157,7 +178,9 @@ def create_binary_sample(
     target: str | list[str] = "",
     metadata: dict[str, Any] | None = None,
     files: dict[str, str] | None = None,
+    evaluation_level: str = "full",
 ) -> Sample:
+    evaluation_level = _normalize_evaluation_level(evaluation_level)
     build_context = Path(tempfile.mkdtemp(prefix="cybingym-agent-env-"))
     source_context = CYBINGYM_DIR / "agent_env"
     shutil.copytree(source_context, build_context, dirs_exist_ok=True)
@@ -182,51 +205,53 @@ def create_binary_sample(
             1,
         )
     )
-    flag = secrets.token_hex(32)
-    catflag_helper_id = secrets.token_hex(8)
-    dockerfile_victim = build_context / "Dockerfile.victim"
-    dockerfile_victim.write_text(
-        dockerfile_victim.read_text().replace(
-            "FROM ${BASE_IMAGE}",
-            f"FROM {prebuilt_base_image}",
-        ).replace(
-            "${CYBINGYM_FLAG}",
-            f"flag{{{flag}}}",
-            1,
-        ).replace(
-            "ARG CYBINGYM_CATFLAG_HELPER_ID=0000000000000000",
-            f"ARG CYBINGYM_CATFLAG_HELPER_ID={catflag_helper_id}",
-            1,
-        )
-    )
 
-    config = ComposeConfig(
-        services={
-            "default": ComposeService(
-                build=ComposeBuild(
-                    context=str(build_context),
-                    dockerfile="Dockerfile.default",
-                ),
-                init=True,
-                command="tail -f /dev/null",
+    flag = secrets.token_hex(32)
+    services = {
+        "default": ComposeService(
+            build=ComposeBuild(
+                context=str(build_context),
+                dockerfile="Dockerfile.default",
             ),
-            "target": ComposeService(
-                build=ComposeBuild(
-                    context=str(build_context),
-                    dockerfile="Dockerfile.target",
-                ),
-                init=True,
-                command="tail -f /dev/null",
+            init=True,
+            command="tail -f /dev/null",
+        ),
+        "target": ComposeService(
+            build=ComposeBuild(
+                context=str(build_context),
+                dockerfile="Dockerfile.target",
             ),
-            "victim": ComposeService(
-                build=ComposeBuild(
-                    context=str(build_context),
-                    dockerfile="Dockerfile.victim",
-                ),
-                init=True,
+            init=True,
+            command="tail -f /dev/null",
+        ),
+    }
+
+    if evaluation_level == "full":
+        catflag_helper_id = secrets.token_hex(8)
+        dockerfile_victim = build_context / "Dockerfile.victim"
+        dockerfile_victim.write_text(
+            dockerfile_victim.read_text().replace(
+                "FROM ${BASE_IMAGE}",
+                f"FROM {prebuilt_base_image}",
+            ).replace(
+                "${CYBINGYM_FLAG}",
+                f"flag{{{flag}}}",
+                1,
+            ).replace(
+                "ARG CYBINGYM_CATFLAG_HELPER_ID=0000000000000000",
+                f"ARG CYBINGYM_CATFLAG_HELPER_ID={catflag_helper_id}",
+                1,
+            )
+        )
+        services["victim"] = ComposeService(
+            build=ComposeBuild(
+                context=str(build_context),
+                dockerfile="Dockerfile.victim",
             ),
-        }
-    )
+            init=True,
+        )
+
+    config = ComposeConfig(services=services)
 
     return Sample(
         id=sample_id,
@@ -272,6 +297,7 @@ def cybingym(
     agent_type: str = "basic",
     opensage_agent_dir: str = DEFAULT_OPENSAGE_AGENT_DIR,
     opensage_output_dir: str = "",
+    kimi_code_version: str = "0.29.0",
     opensage_max_llm_calls: int = 0,
     opensage_max_workers: int = 10,
     max_workers: int | None = None,
@@ -285,10 +311,12 @@ def cybingym(
     opensage_provider: str = "",
     opensage_reasoning_effort: str = "",
     opensage_artifact_collection_mode: str = "minimal",
+    opensage_extend_from_run_dir: str = "",
     opensage_sample_ids: str = OPENSAGE_SMOKE_SAMPLE_IDS,
     opensage_base_port: int = 20000,
     opensage_port_stride: int = 10,
     opensage_history_filter: str = "",
+    opensage_history_failure_category: str = "",
     opensage_rerun_errors_only: bool = False,
     opensage_history_dir: str = "",
     opensage_history_log_dir: str = "logs",
@@ -296,7 +324,15 @@ def cybingym(
     opensage_history_model: str = "same",
     opensage_history_provider: str = "",
     opensage_history_include_unknown_model: bool = False,
+    evaluation_level: str = "full",
 ):
+    evaluation_level = _normalize_evaluation_level(evaluation_level)
+    if evaluation_level == "crash" and agent_type not in CRASH_ONLY_AGENT_TYPES:
+        raise ValueError(
+            "evaluation_level=crash is currently supported only for "
+            f"agent_type in {sorted(CRASH_ONLY_AGENT_TYPES)}; got {agent_type!r}"
+        )
+
     def build_sample(record: dict[str, Any]) -> Sample:
         metadata = record.get("metadata") or {}
         analysis_image = metadata.get("analysis_image")
@@ -319,6 +355,7 @@ def cybingym(
             target=record.get("target", ""),
             metadata=metadata,
             files=record.get("files"),
+            evaluation_level=evaluation_level,
         )
 
     dataset = json_dataset("dataset.json", sample_fields=build_sample)
@@ -373,12 +410,17 @@ def cybingym(
                 provider=history_provider or None,
                 include_unknown_model=opensage_history_include_unknown_model,
             )
-            filtered_ids = filter_histories(histories, history_filter)
+            filtered_ids = filter_histories(
+                histories,
+                history_filter,
+                failure_category=opensage_history_failure_category,
+            )
             dataset = dataset.filter(lambda sample: str(sample.id) in filtered_ids)
             summary = format_history_summary(
                 histories,
                 selected_ids=filtered_ids,
                 mode=history_filter,
+                failure_category=opensage_history_failure_category,
                 model=history_model or None,
                 provider=history_provider or None,
                 include_unknown_model=opensage_history_include_unknown_model,
@@ -390,6 +432,7 @@ def cybingym(
                     histories,
                     selected_ids=filtered_ids,
                     mode=history_filter,
+                    failure_category=opensage_history_failure_category,
                     model=history_model or None,
                     provider=history_provider or None,
                     include_unknown_model=opensage_history_include_unknown_model,
@@ -398,6 +441,7 @@ def cybingym(
                 histories,
                 selected_ids=filtered_ids,
                 mode=history_filter,
+                failure_category=opensage_history_failure_category,
                 model=history_model or None,
                 provider=history_provider or None,
                 include_unknown_model=opensage_history_include_unknown_model,
@@ -405,16 +449,25 @@ def cybingym(
             if len(dataset) == 0:
                 raise ValueError(
                     "No CyBinGym samples matched "
-                    f"opensage_history_filter={history_filter!r}. "
+                    f"opensage_history_filter={history_filter!r}, "
+                    f"opensage_history_failure_category={opensage_history_failure_category!r}. "
                     "Use opensage_history_filter=unresolved to include never-run "
                     "samples, or omit the filter to run the selected set."
                 )
+
+        if _clean_str(opensage_extend_from_run_dir) and len(dataset) != 1:
+            raise ValueError(
+                "opensage_extend_from_run_dir is an explicit single-sample continuation "
+                f"option, but the selected dataset contains {len(dataset)} samples. "
+                "Select exactly one sample with opensage_sample_ids and --limit 1."
+            )
 
     return Task(
         dataset=dataset,
         solver=_select_solver(
             agent_type=agent_type,
             opensage_agent_dir=opensage_agent_dir,
+            kimi_code_version=kimi_code_version,
             opensage_output_dir=opensage_output_dir,
             opensage_max_llm_calls=opensage_max_llm_calls,
             opensage_max_workers=(opensage_max_workers if max_workers is None else max_workers),
@@ -428,10 +481,12 @@ def cybingym(
             opensage_provider=opensage_provider,
             opensage_reasoning_effort=opensage_reasoning_effort,
             opensage_artifact_collection_mode=opensage_artifact_collection_mode,
+            opensage_extend_from_run_dir=opensage_extend_from_run_dir,
             opensage_base_port=opensage_base_port,
             opensage_port_stride=opensage_port_stride,
+            evaluation_level=evaluation_level,
         ),
-        scorer=cybingym_scorer(
+        scorer=cybingym_crash_scorer() if evaluation_level == "crash" else cybingym_scorer(
             opensage_model=history_model or opensage_model,
             opensage_provider=history_provider or opensage_provider,
             opensage_history_summary_path=opensage_history_summary_path,
@@ -443,6 +498,7 @@ def cybingym(
                 else None
             ),
             opensage_history_filter=history_filter or "all",
+            opensage_history_failure_category=opensage_history_failure_category,
             opensage_history_model=history_model,
             opensage_history_provider=history_provider,
             opensage_history_include_unknown_model=opensage_history_include_unknown_model,

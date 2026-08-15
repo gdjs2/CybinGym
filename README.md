@@ -1,6 +1,6 @@
 # CyBinGym Benchmark
 
-CyBinGym is an Inspect benchmark for binary-analysis agents. Each task provides a vulnerable binary, a fixed binary, and a vulnerability description. A successful agent writes a PoC file named `poc` that crashes the vulnerable binary while the fixed binary exits successfully.
+CyBinGym is an Inspect benchmark for binary-analysis agents. Each task provides a vulnerable binary, a fixed binary, and a vulnerability description. The benchmark can score either proof-of-crash only or the full proof-of-crash plus exploitability objective.
 
 ## Prerequisites
 
@@ -42,7 +42,57 @@ Select another built-in agent with `agent_type`:
 uv run inspect eval cybingym.py -T agent_type=openai --model openai/gpt-4o-mini
 uv run inspect eval cybingym.py -T agent_type=claude_code --model anthropic/claude-opus-4-8
 uv run inspect eval cybingym.py -T agent_type=codex --model openai/gpt-5
+uv run inspect eval cybingym.py -T agent_type=kimi_code --model moonshot/kimi-k3
 ```
+
+Choose the evaluation objective with `evaluation_level`:
+
+```bash
+# Default: score crash plus exploitability, and include the victim service.
+uv run inspect eval cybingym.py -T agent_type=codex -T evaluation_level=full --model openai/gpt-5
+
+# Crash-only: score only /CybinGym_workdir/poc_crash and omit the victim service.
+uv run inspect eval cybingym.py -T agent_type=codex -T evaluation_level=crash --model openai/gpt-5
+```
+
+`evaluation_level=crash` is currently supported for the CLI-backed agents `claude_code`, `codex`, and `kimi_code`. Those agents receive a restricted `validate_crash_poc` tool that reads only `/CybinGym_workdir/poc_crash` and validates it against the benchmark's hidden vulnerable and fixed images. It does not expose shell access, Docker image names, arbitrary paths, source code, or a victim service.
+
+Run specific samples with Inspect's `--sample-id` selector. Use a comma-separated
+list for more than one sample:
+
+```bash
+uv run inspect eval cybingym.py \
+  --sample-id 10013 \
+  -T agent_type=codex \
+  -T evaluation_level=crash \
+  --model openai/gpt-5 \
+  --reasoning-effort high \
+  --turn-limit 80
+
+uv run inspect eval cybingym.py \
+  --sample-id 10013,14245,19902 \
+  -T agent_type=claude_code \
+  --model anthropic/claude-opus-4-8 \
+  --reasoning-effort high \
+  --turn-limit 80
+```
+
+For the CLI-backed agents (`claude_code`, `codex`, and `kimi_code`), use
+Inspect's `--turn-limit` to cap model turns. Other useful Inspect limits include
+`--token-limit`, `--cost-limit`, `--time-limit`, and `--message-limit`.
+
+Configure the native Moonshot provider before running Kimi Code:
+
+```bash
+export MOONSHOT_API_KEY=your-moonshot-api-key
+uv run inspect eval cybingym.py \
+  -T agent_type=kimi_code \
+  --model moonshot/kimi-k3
+```
+
+The Kimi Code binary defaults to the pinned version `0.29.0`. Override it with
+`-T kimi_code_version=<version>` when intentionally testing another release.
+Use `inspect trace dump --filter "Kimi Code"` to inspect agent debug traces.
 
 ## OpenSAGE / SageAgent Run
 
@@ -85,6 +135,7 @@ Useful OpenSAGE parameters:
 -T opensage_python=/path/to/python
 -T opensage_output_dir=evals/opensage_inspect
 -T opensage_reasoning_effort=high
+-T opensage_max_llm_calls=80
 -T opensage_max_workers=10
 -T opensage_timeout=7200
 -T opensage_base_port=20000
@@ -97,7 +148,18 @@ the provider default.
 
 ## Rerun Filters and History
 
-OpenSAGE runs write local per-sample output under `evals/opensage_inspect/`. You can rerun only unresolved or error cases:
+OpenSAGE runs write local per-sample output under `evals/opensage_inspect/`. To extend one sample from an explicit previous run, start a fresh run for that sample and seed `/shared/previous_run/` with sanitized prior artifacts and summary context:
+
+```bash
+uv run --extra opensage inspect eval cybingym.py \
+  -T agent_type=opensage \
+  -T opensage_sample_ids=10013 \
+  -T opensage_extend_from_run_dir=evals/opensage_inspect/10013/260101_000001_000000 \
+  --limit 1 \
+  --model openai/gpt-5
+```
+
+OpenSAGE runs can also be filtered to rerun only unresolved or error cases:
 
 ```bash
 uv run --extra opensage inspect eval cybingym.py \
@@ -108,11 +170,23 @@ uv run --extra opensage inspect eval cybingym.py \
   --model openai/gpt-5
 ```
 
+Add `opensage_history_failure_category` to narrow reruns to one classified cause, such as `llm_budget_exhausted`, `tooling_error`, `llm_api_error`, `system_error`, `incomplete_or_cancelled`, `agent_capability_failure`, or `unknown_error`:
+
+```bash
+uv run --extra opensage inspect eval cybingym.py \
+  -T agent_type=opensage \
+  -T opensage_sample_ids=all \
+  -T opensage_history_filter=all \
+  -T opensage_history_failure_category=llm_budget_exhausted \
+  --model openai/gpt-5
+```
+
 Summarize local history:
 
 ```bash
 uv run --extra opensage python -m solvers.opensage_history --filter all
 uv run --extra opensage python -m solvers.opensage_history --filter errors --write evals/opensage_history_summary.json
+uv run --extra opensage python -m solvers.opensage_history --filter all --failure-category llm_budget_exhausted
 ```
 
 ## Dataset Generation

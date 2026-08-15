@@ -785,6 +785,7 @@ async def _run_opensage(
     llm_retry_timeout: int,
     llm_retry_count: int,
     artifact_collection_mode: str,
+    extend_from_run_dir: str = "",
 ) -> tuple[int, Path, Path, dict[str, Any]]:
     output_dir.mkdir(parents=True, exist_ok=True)
     stdout_path = output_dir / "opensage_stdout.log"
@@ -837,6 +838,11 @@ async def _run_opensage(
             str(ports["pyghidra_mcp_port"]),
             "run",
         ]
+        if extend_from_run_dir:
+            cmd[-1:-1] = [
+                "--extend_from_run_dir",
+                str(Path(extend_from_run_dir).expanduser()),
+            ]
 
         env = _build_env(
             cybingym_dir=cybingym_dir,
@@ -861,6 +867,7 @@ async def _run_opensage(
             "llm_retry_count": int(llm_retry_count),
             "reasoning_effort": opensage_reasoning_effort,
             "artifact_collection_mode": artifact_collection_mode,
+            "extend_from_run_dir": str(extend_from_run_dir or ""),
             "outer_timeout": False,
         }
         with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
@@ -905,6 +912,7 @@ def opensage_solver(
     opensage_provider: str = "",
     opensage_reasoning_effort: str = "",
     artifact_collection_mode: str = "minimal",
+    extend_from_run_dir: str = "",
     base_port: int = 20000,
     port_stride: int = 10,
 ) -> Solver:
@@ -954,6 +962,7 @@ def opensage_solver(
             "llm_retry_timeout": int(llm_retry_timeout),
             "llm_retry_count": int(llm_retry_count),
             "artifact_collection_mode": artifact_collection_mode,
+            "extend_from_run_dir": str(extend_from_run_dir or ""),
         }
         docker_warning = _stale_inspect_network_warning()
         if docker_warning:
@@ -997,6 +1006,7 @@ def opensage_solver(
                     llm_retry_timeout=llm_retry_timeout,
                     llm_retry_count=llm_retry_count,
                     artifact_collection_mode=artifact_collection_mode,
+                    extend_from_run_dir=extend_from_run_dir,
                 )
                 bridge_status.update(runner_status)
                 bridge_status["returncode"] = returncode

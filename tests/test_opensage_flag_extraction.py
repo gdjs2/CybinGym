@@ -128,6 +128,198 @@ class OpenSageLeakageTests(unittest.TestCase):
             self.assertTrue((shared_dir / "desc.txt").exists())
             self.assertFalse((shared_dir / "sample.json").exists())
 
+    def test_extend_previous_run_seeds_sanitized_previous_run_directory(self):
+        sample = {
+            "id": "sample-1",
+            "input": "prompt",
+            "target": "4db0dc42d846a013006afdac736e8c67dd348760e1255bc3416e9f884c579ccc",
+            "metadata": {"target_binary": "bin"},
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            desc_dir = root / "data" / "sample-1"
+            desc_dir.mkdir(parents=True)
+            (desc_dir / "desc.txt").write_text("description", encoding="utf-8")
+
+            previous_run = root / "evals" / "opensage_inspect" / "sample-1" / "260101_000001"
+            previous_run.mkdir(parents=True)
+            (previous_run / "opensage_bridge_status.json").write_text(
+                json.dumps(
+                    {
+                        "sample_id": "sample-1",
+                        "status": "finished",
+                        "returncode": 0,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (previous_run / "cybingym_result.json").write_text(
+                json.dumps(
+                    {
+                        "sample_id": "sample-1",
+                        "poc_crash_found": True,
+                        "poc_found": True,
+                        "submitted_flag": "flag{oldsecret}",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (previous_run / "poc_crash").write_bytes(b"crash")
+            (previous_run / "poc").write_bytes(b"exploit")
+            (previous_run / "poc.response").write_text(
+                f"old response flag{{oldsecret}} path {previous_run}",
+                encoding="utf-8",
+            )
+            (previous_run / "live_events.jsonl").write_text(
+                json.dumps(
+                    {
+                        "author": "ctf_agent",
+                        "content": {
+                            "parts": [
+                                {
+                                    "text": (
+                                        "Found unchecked length field in parser; "
+                                        f"continue from {previous_run} but ignore flag{{oldsecret}}"
+                                    )
+                                }
+                            ]
+                        },
+                    }
+                )
+                + "\n"
+                + json.dumps(
+                    {
+                        "author": "ctf_agent",
+                        "content": {
+                            "parts": [
+                                {
+                                    "function_call": {
+                                        "name": "run_binary_sandbox_command",
+                                        "args": {"command": "check crashing offset"},
+                                    }
+                                }
+                            ]
+                        },
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            report_dir = previous_run / "cybingym_sample-1" / "sandbox_output" / "shared"
+            report_dir.mkdir(parents=True)
+            (report_dir / "report.txt").write_text(
+                "prior report flag{oldsecret}",
+                encoding="utf-8",
+            )
+
+            evaluation = object.__new__(
+                opensage_cybingym_runner.CyBinGymOpenSageEvaluation
+            )
+            evaluation.cybingym_dir = str(root)
+            evaluation.output_dir = str(root / "outputs")
+            evaluation.extend_from_run_dir = str(previous_run)
+
+            shared_dir = Path(evaluation._get_initial_data_dir(sample))
+
+            self.assertTrue((shared_dir / "desc.txt").exists())
+            self.assertFalse((shared_dir / "poc_crash").exists())
+            self.assertFalse((shared_dir / "poc").exists())
+
+            previous_shared = shared_dir / "previous_run"
+            self.assertEqual((previous_shared / "poc_crash").read_bytes(), b"crash")
+            self.assertEqual((previous_shared / "poc").read_bytes(), b"exploit")
+            self.assertNotIn(
+                "flag{oldsecret}",
+                (previous_shared / "poc.response").read_text(encoding="utf-8"),
+            )
+            self.assertIn(
+                "flag{<redacted_previous_run>}",
+                (previous_shared / "report.txt").read_text(encoding="utf-8"),
+            )
+            context_text = (previous_shared / "previous_run_context.txt").read_text(
+                encoding="utf-8"
+            )
+            analysis_text = (previous_shared / "previous_run_analysis.txt").read_text(
+                encoding="utf-8"
+            )
+            readme_text = (previous_shared / "README.txt").read_text(encoding="utf-8")
+            self.assertIn("/shared/previous_run/", context_text)
+            self.assertIn("Prior analysis summary from live_events.jsonl", context_text)
+            self.assertIn("unchecked length field", context_text)
+            self.assertIn("tool call run_binary_sandbox_command", context_text)
+            self.assertIn("unchecked length field", analysis_text)
+            self.assertNotIn(str(previous_run), context_text)
+            self.assertNotIn(str(previous_run), analysis_text)
+            self.assertNotIn(str(previous_run), readme_text)
+            self.assertTrue((previous_shared / "README.txt").exists())
+
+    def test_extend_previous_run_prompt_redacts_flags_and_validates_sample(self):
+        sample = {
+            "id": "1",
+            "input": "original task prompt",
+            "metadata": {"target_binary": "target-bin"},
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            previous_run = root / "1" / "260101_000001"
+            previous_run.mkdir(parents=True)
+            (previous_run / "opensage_bridge_status.json").write_text(
+                json.dumps({"sample_id": "1", "status": "error", "returncode": 1}),
+                encoding="utf-8",
+            )
+            (previous_run / "cybingym_result.json").write_text(
+                json.dumps({"submitted_flag": "flag{oldsecret}"}),
+                encoding="utf-8",
+            )
+            (previous_run / "report.txt").write_text(
+                "found old flag{oldsecret}",
+                encoding="utf-8",
+            )
+            (previous_run / "live_events.jsonl").write_text(
+                json.dumps(
+                    {
+                        "author": "ctf_agent",
+                        "content": {
+                            "parts": [
+                                {
+                                    "text": (
+                                        "analysis says stack pivot candidate; "
+                                        f"host path {previous_run}; flag{{oldsecret}}"
+                                    )
+                                }
+                            ]
+                        },
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            evaluation = object.__new__(
+                opensage_cybingym_runner.CyBinGymOpenSageEvaluation
+            )
+            evaluation.extend_from_run_dir = str(previous_run)
+            evaluation.max_llm_calls = 0
+
+            prompt = evaluation._get_first_user_message(sample)
+
+            self.assertIn("Previous Run Context", prompt)
+            self.assertIn("/shared/previous_run/", prompt)
+            self.assertIn("Prior analysis summary from live_events.jsonl", prompt)
+            self.assertIn("stack pivot candidate", prompt)
+            self.assertIn("flag{<redacted_previous_run>}", prompt)
+            self.assertNotIn("flag{oldsecret}", prompt)
+            self.assertNotIn(str(previous_run), prompt)
+
+            (previous_run / "opensage_bridge_status.json").write_text(
+                json.dumps({"sample_id": "2"}),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "does not match"):
+                evaluation._get_first_user_message(sample)
+
     def test_opensage_runner_collects_poc_and_poc_crash(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -302,6 +494,7 @@ class OpenSageLeakageTests(unittest.TestCase):
                         llm_retry_timeout=600,
                         llm_retry_count=5,
                         artifact_collection_mode="minimal",
+                        extend_from_run_dir=str(root / "previous"),
                     )
                 )
         finally:
@@ -313,6 +506,12 @@ class OpenSageLeakageTests(unittest.TestCase):
         self.assertEqual(cmd[cmd.index("--agent_timeout") + 1], "300")
         self.assertEqual(status["agent_timeout_seconds"], 300)
         self.assertEqual(status["bridge_wait_timeout_seconds"], 1200)
+        self.assertIn("--extend_from_run_dir", cmd)
+        self.assertEqual(
+            cmd[cmd.index("--extend_from_run_dir") + 1],
+            str(root / "previous"),
+        )
+        self.assertEqual(status["extend_from_run_dir"], str(root / "previous"))
 
     def test_victim_dockerfile_rewrite_uses_copy_without_flag_variable(self):
         template = (REPO_ROOT / "agent_env" / "Dockerfile.victim").read_text(

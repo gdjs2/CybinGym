@@ -17,6 +17,24 @@ OUTCOME_UNSOLVED = "unsolved"
 OUTCOME_ERROR = "error"
 OUTCOME_UNATTEMPTED = "unattempted"
 
+FAILURE_LLM_BUDGET_EXHAUSTED = "llm_budget_exhausted"
+FAILURE_SYSTEM_ERROR = "system_error"
+FAILURE_TOOLING_ERROR = "tooling_error"
+FAILURE_LLM_API_ERROR = "llm_api_error"
+FAILURE_AGENT_CAPABILITY = "agent_capability_failure"
+FAILURE_INCOMPLETE_OR_CANCELLED = "incomplete_or_cancelled"
+FAILURE_UNKNOWN_ERROR = "unknown_error"
+
+FAILURE_CATEGORIES = (
+    FAILURE_LLM_BUDGET_EXHAUSTED,
+    FAILURE_TOOLING_ERROR,
+    FAILURE_LLM_API_ERROR,
+    FAILURE_SYSTEM_ERROR,
+    FAILURE_INCOMPLETE_OR_CANCELLED,
+    FAILURE_AGENT_CAPABILITY,
+    FAILURE_UNKNOWN_ERROR,
+)
+
 DEFAULT_OPENSAGE_OUTPUT_DIR = Path("evals/opensage_inspect")
 DEFAULT_INSPECT_LOG_DIR = Path("logs")
 
@@ -67,6 +85,11 @@ class RunRecord:
     error_log_count: int = 0
     error_kinds: dict[str, int] = field(default_factory=dict)
     fatal_reasons: list[str] = field(default_factory=list)
+    failure_category: str | None = None
+    failure_reasons: list[str] = field(default_factory=list)
+    llm_call_budget: dict[str, Any] = field(default_factory=dict)
+    mcp_preflight: dict[str, Any] = field(default_factory=dict)
+    mcp_runtime: dict[str, Any] = field(default_factory=dict)
 
     @property
     def has_poc(self) -> bool:
@@ -91,6 +114,11 @@ class RunRecord:
             "error_log_count": self.error_log_count,
             "error_kinds": dict(self.error_kinds),
             "fatal_reasons": list(self.fatal_reasons),
+            "failure_category": self.failure_category,
+            "failure_reasons": list(self.failure_reasons),
+            "llm_call_budget": dict(self.llm_call_budget),
+            "mcp_preflight": dict(self.mcp_preflight),
+            "mcp_runtime": dict(self.mcp_runtime),
             "clean": self.clean,
         }
 
@@ -102,6 +130,8 @@ class SampleHistory:
     runs: list[RunRecord] = field(default_factory=list)
     outcome: str = OUTCOME_UNATTEMPTED
     reasons: list[str] = field(default_factory=list)
+    failure_category: str | None = None
+    failure_reasons: list[str] = field(default_factory=list)
 
     @property
     def latest_run(self) -> RunRecord | None:
@@ -127,6 +157,8 @@ class SampleHistory:
             "reasons": list(self.reasons),
             "latest_score": latest_score.as_dict() if latest_score else None,
             "latest_run": latest_run.as_dict() if latest_run else None,
+            "failure_category": self.failure_category,
+            "failure_reasons": list(self.failure_reasons),
             "score_count": len(self.scores),
             "run_count": len(self.runs),
         }
@@ -230,6 +262,8 @@ def discover_history_models(
 
 
 def classify_sample_history(history: SampleHistory) -> None:
+    history.failure_category = None
+    history.failure_reasons = []
     score_values = [score.value for score in history.scores]
     clean_i_scores = bool(
         any(score.value == "I" for score in history.scores)
@@ -241,26 +275,46 @@ def classify_sample_history(history: SampleHistory) -> None:
         history.reasons = ["at least one Inspect scorer result is C"]
         return
 
+    latest_run = history.latest_run
+    latest_score = history.latest_score
+
     if clean_i_scores:
         history.outcome = OUTCOME_UNSOLVED
         history.reasons = ["Inspect scorer result is I with a clean completed OpenSAGE run"]
+        history.failure_category = FAILURE_AGENT_CAPABILITY
+        history.failure_reasons = ["clean completed run did not satisfy the scorer"]
+        if latest_run and not latest_run.failure_category:
+            latest_run.failure_category = FAILURE_AGENT_CAPABILITY
+            latest_run.failure_reasons = list(history.failure_reasons)
         return
 
     if history.scores or history.runs:
         history.outcome = OUTCOME_ERROR
         reasons: list[str] = []
-        latest_run = history.latest_run
-        latest_score = history.latest_score
+        failure_reasons: list[str] = []
         if latest_score and latest_score.value:
             reasons.append(f"latest Inspect scorer result is {latest_score.value}")
         if latest_score and latest_score.error:
             reasons.append(f"Inspect sample error: {latest_score.error}")
+            failure_reasons.append(f"Inspect sample error: {latest_score.error}")
         if latest_run:
             reasons.extend(latest_run.fatal_reasons)
+            failure_reasons.extend(latest_run.failure_reasons)
             if latest_run.error_log_count:
                 reasons.append(f"{latest_run.error_log_count} OpenSAGE ERROR log lines")
             if not latest_run.has_poc:
                 reasons.append("no poc recorded in latest OpenSAGE run")
+            history.failure_category = latest_run.failure_category
+        if not history.failure_category:
+            if latest_score and latest_score.error:
+                history.failure_category = FAILURE_SYSTEM_ERROR
+            elif latest_run:
+                history.failure_category = FAILURE_UNKNOWN_ERROR
+            else:
+                history.failure_category = FAILURE_UNKNOWN_ERROR
+        history.failure_reasons = _dedupe(failure_reasons) or [
+            "attempted but no classified failure reason found"
+        ]
         history.reasons = _dedupe(reasons) or ["attempted but no clean final result found"]
         return
 
@@ -268,47 +322,70 @@ def classify_sample_history(history: SampleHistory) -> None:
     history.reasons = ["no Inspect score or OpenSAGE run found"]
 
 
+def _normalize_failure_category(value: str | None) -> str | None:
+    normalized = (value or "").strip().lower().replace("-", "_")
+    if not normalized or normalized in {"all", "any", "*"}:
+        return None
+    if normalized not in FAILURE_CATEGORIES:
+        raise ValueError(
+            "Unsupported OpenSAGE failure category "
+            f"{value!r}; use one of: {', '.join(FAILURE_CATEGORIES)}"
+        )
+    return normalized
+
+
 def filter_histories(
     histories: dict[str, SampleHistory],
     mode: str,
+    failure_category: str | None = None,
 ) -> set[str]:
     normalized = (mode or "").strip().lower().replace("_", "-")
+    category = _normalize_failure_category(failure_category)
     if not normalized or normalized in {"all", "selected"}:
-        return set(histories)
-    if normalized in {"error", "errors", "rerun-errors"}:
-        return {
+        selected = set(histories)
+    elif normalized in {"error", "errors", "rerun-errors"}:
+        selected = {
             sample_id
             for sample_id, history in histories.items()
             if history.outcome == OUTCOME_ERROR
         }
-    if normalized in {"unresolved", "errors-or-unattempted"}:
-        return {
+    elif normalized in {"unresolved", "errors-or-unattempted"}:
+        selected = {
             sample_id
             for sample_id, history in histories.items()
             if history.outcome in {OUTCOME_ERROR, OUTCOME_UNATTEMPTED}
         }
-    if normalized in {"not-solved", "not-solved-or-unattempted"}:
-        return {
+    elif normalized in {"not-solved", "not-solved-or-unattempted"}:
+        selected = {
             sample_id
             for sample_id, history in histories.items()
             if history.outcome != OUTCOME_SOLVED
         }
-    if normalized in {"solved"}:
-        return {
+    elif normalized in {"solved"}:
+        selected = {
             sample_id
             for sample_id, history in histories.items()
             if history.outcome == OUTCOME_SOLVED
         }
-    if normalized in {"unsolved", "clean-unsolved"}:
-        return {
+    elif normalized in {"unsolved", "clean-unsolved"}:
+        selected = {
             sample_id
             for sample_id, history in histories.items()
             if history.outcome == OUTCOME_UNSOLVED
         }
-    raise ValueError(
-        "Unsupported OpenSAGE history filter "
-        f"{mode!r}; use selected, errors, unresolved, not-solved, solved, or unsolved"
-    )
+    else:
+        raise ValueError(
+            "Unsupported OpenSAGE history filter "
+            f"{mode!r}; use selected, errors, unresolved, not-solved, solved, or unsolved"
+        )
+
+    if category:
+        selected = {
+            sample_id
+            for sample_id in selected
+            if histories[sample_id].failure_category == category
+        }
+    return selected
 
 
 def iter_inspect_scores(log_dir: str | Path) -> list[ScoreRecord]:
@@ -402,21 +479,41 @@ def iter_opensage_runs(output_dir: str | Path) -> list[RunRecord]:
     return runs
 
 
+def failure_counts_for_histories(
+    histories: dict[str, SampleHistory],
+) -> dict[str, int]:
+    counts = collections.Counter(
+        history.failure_category
+        for history in histories.values()
+        if history.outcome != OUTCOME_SOLVED and history.failure_category
+    )
+    return {category: counts[category] for category in FAILURE_CATEGORIES}
+
+
+def _format_failure_counts(counts: dict[str, int]) -> str:
+    shown = [f"{category}={counts.get(category, 0)}" for category in FAILURE_CATEGORIES]
+    return " | ".join(shown)
+
+
 def format_history_summary(
     histories: dict[str, SampleHistory],
     *,
     selected_ids: set[str] | None = None,
     mode: str = "all",
+    failure_category: str | None = None,
     model: str | None = None,
     provider: str | None = None,
     include_unknown_model: bool = False,
     limit: int = 80,
 ) -> str:
     counts = collections.Counter(history.outcome for history in histories.values())
+    failure_counts = failure_counts_for_histories(histories)
     selected_ids = selected_ids or set()
+    normalized_failure_category = _normalize_failure_category(failure_category)
     lines = [
         "OpenSAGE history summary",
         f"Mode: {mode or 'all'}",
+        f"Failure category: {normalized_failure_category or 'all'}",
         f"Model: {model or 'all'}",
         f"Provider: {provider or 'all'}",
         f"Include unknown model records: {include_unknown_model}",
@@ -430,6 +527,7 @@ def format_history_summary(
             error=counts[OUTCOME_ERROR],
             unattempted=counts[OUTCOME_UNATTEMPTED],
         ),
+        f"Failure categories: {_format_failure_counts(failure_counts)}",
     ]
     if selected_ids:
         lines.append(f"Selected for this filter: {len(selected_ids)}")
@@ -458,9 +556,9 @@ def format_history_summary(
         for history in error_histories:
             latest_run = history.latest_run
             suffix = f" ({latest_run.run_dir})" if latest_run else ""
-            lines.append(
-                f"- {history.sample_id}: {'; '.join(history.reasons[:4])}{suffix}"
-            )
+            category = history.failure_category or FAILURE_UNKNOWN_ERROR
+            detail = "; ".join((history.failure_reasons or history.reasons)[:4])
+            lines.append(f"- {history.sample_id} [{category}]: {detail}{suffix}")
 
     return "\n".join(lines)
 
@@ -470,15 +568,18 @@ def history_summary_dict(
     *,
     selected_ids: set[str] | None = None,
     mode: str = "all",
+    failure_category: str | None = None,
     model: str | None = None,
     provider: str | None = None,
     include_unknown_model: bool = False,
     include_records: bool = False,
 ) -> dict[str, Any]:
     counts = collections.Counter(history.outcome for history in histories.values())
+    normalized_failure_category = _normalize_failure_category(failure_category)
     return {
         "generated_at": datetime.datetime.now(datetime.UTC).isoformat(),
         "mode": mode or "all",
+        "failure_category": normalized_failure_category,
         "model": model,
         "provider": provider,
         "include_unknown_model": include_unknown_model,
@@ -489,6 +590,7 @@ def history_summary_dict(
             OUTCOME_UNATTEMPTED: counts[OUTCOME_UNATTEMPTED],
             "total": len(histories),
         },
+        "failure_counts": failure_counts_for_histories(histories),
         "selected_ids": sorted(selected_ids or set(), key=_sample_sort_key),
         "samples": {
             sample_id: history.as_dict(include_records=include_records)
@@ -503,6 +605,7 @@ def build_per_model_history_summary(
     log_dir: str | Path = DEFAULT_INSPECT_LOG_DIR,
     sample_ids: set[str] | None = None,
     mode: str = "all",
+    failure_category: str | None = None,
     provider: str | None = None,
     include_records: bool = False,
 ) -> dict[str, Any]:
@@ -523,12 +626,17 @@ def build_per_model_history_summary(
             model=model_name,
             provider=provider,
         )
-        selected_ids = filter_histories(histories, mode)
+        selected_ids = filter_histories(
+            histories,
+            mode,
+            failure_category=failure_category,
+        )
         selected_total += len(selected_ids)
         summaries[model_name] = history_summary_dict(
             histories,
             selected_ids=selected_ids,
             mode=mode,
+            failure_category=failure_category,
             model=model_name,
             provider=provider,
             include_records=include_records,
@@ -537,6 +645,7 @@ def build_per_model_history_summary(
     return {
         "generated_at": datetime.datetime.now(datetime.UTC).isoformat(),
         "mode": mode or "all",
+        "failure_category": _normalize_failure_category(failure_category),
         "provider": provider,
         "model_count": len(model_names),
         "selected_total": selected_total,
@@ -556,6 +665,7 @@ def format_per_model_history_summary(
     lines = [
         "OpenSAGE per-model history summary",
         f"Mode: {summary.get('mode') or 'all'}",
+        f"Failure category: {summary.get('failure_category') or 'all'}",
         f"Provider: {summary.get('provider') or 'all'}",
         f"Models: {len(models)}",
         f"Selected for this filter across models: {summary.get('selected_total', 0)}",
@@ -582,6 +692,10 @@ def format_per_model_history_summary(
                     unsolved=counts.get(OUTCOME_UNSOLVED, 0),
                     error=counts.get(OUTCOME_ERROR, 0),
                     unattempted=counts.get(OUTCOME_UNATTEMPTED, 0),
+                ),
+                (
+                    "Failure categories: "
+                    f"{_format_failure_counts(model_summary.get('failure_counts', {}))}"
                 ),
                 f"Selected for this filter: {len(selected_ids)}",
             ]
@@ -624,6 +738,7 @@ def write_history_summary(
     *,
     selected_ids: set[str] | None = None,
     mode: str = "all",
+    failure_category: str | None = None,
     model: str | None = None,
     provider: str | None = None,
     include_unknown_model: bool = False,
@@ -637,6 +752,7 @@ def write_history_summary(
                     histories,
                     selected_ids=selected_ids,
                     mode=mode,
+                    failure_category=failure_category,
                     model=model,
                     provider=provider,
                     include_unknown_model=include_unknown_model,
@@ -651,6 +767,7 @@ def write_history_summary(
                 histories,
                 selected_ids=selected_ids,
                 mode=mode,
+                failure_category=failure_category,
                 model=model,
                 provider=provider,
                 include_unknown_model=include_unknown_model,
@@ -818,6 +935,244 @@ def _normalize_score_value(value: Any) -> str:
     return text or ""
 
 
+def _read_first_json(paths: list[Path]) -> dict[str, Any]:
+    for path in paths:
+        value = _read_json(path)
+        if value:
+            return value
+    return {}
+
+
+def _read_first_cost_info(run_dir: Path, result: dict[str, Any]) -> dict[str, Any]:
+    candidates: list[Path] = []
+    task_output_dir = _clean_str(result.get("task_output_dir"))
+    if task_output_dir:
+        candidates.append(Path(task_output_dir) / "cost_info.json")
+    candidates.extend(sorted(run_dir.glob("*/cost_info.json")))
+    return _read_first_json(candidates)
+
+
+def _read_mcp_preflight(run_dir: Path, result: dict[str, Any]) -> dict[str, Any]:
+    value = result.get("mcp_preflight") if isinstance(result, dict) else None
+    if isinstance(value, dict) and value:
+        return value
+    return _read_first_json(sorted(run_dir.glob("*/mcp_preflight.json")))
+
+
+def _read_mcp_runtime(run_dir: Path, result: dict[str, Any]) -> dict[str, Any]:
+    value = result.get("mcp_runtime") if isinstance(result, dict) else None
+    if isinstance(value, dict) and value:
+        return value
+    return _read_first_json(sorted(run_dir.glob("*/mcp_runtime_failures.json")))
+
+
+def _extract_llm_call_budget(
+    result: dict[str, Any],
+    cost_info: dict[str, Any],
+) -> dict[str, Any]:
+    for source in (result.get("llm_call_budget"), cost_info.get("llm_call_budget")):
+        if isinstance(source, dict) and source:
+            return dict(source)
+
+    budget = cost_info.get("budget") if isinstance(cost_info, dict) else None
+    if isinstance(budget, dict):
+        extracted: dict[str, Any] = {}
+        for key in ("exhausted", "exceeded", "exhausted_reason", "budget_exhausted"):
+            if key in budget:
+                extracted[key] = budget[key]
+        per_model_usage = budget.get("per_model_usage")
+        if isinstance(per_model_usage, dict):
+            calls = 0
+            for usage in per_model_usage.values():
+                if not isinstance(usage, dict):
+                    continue
+                try:
+                    calls += int(usage.get("calls") or 0)
+                except (TypeError, ValueError):
+                    pass
+            if calls:
+                extracted["completed_llm_calls"] = calls
+        if extracted:
+            return extracted
+    return {}
+
+
+def _int_value(value: Any) -> int:
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _llm_budget_exhausted(llm_call_budget: dict[str, Any]) -> bool:
+    if not isinstance(llm_call_budget, dict) or not llm_call_budget:
+        return False
+    exhausted_reason = _clean_str(llm_call_budget.get("exhausted_reason")) or ""
+    if exhausted_reason == "llm_call_budget_exhausted":
+        return True
+    if llm_call_budget.get("exhausted") is True or llm_call_budget.get("exceeded") is True:
+        return True
+    configured = _int_value(llm_call_budget.get("configured_max_llm_calls"))
+    if configured <= 0:
+        return False
+    used = max(
+        _int_value(llm_call_budget.get("started_llm_calls")),
+        _int_value(llm_call_budget.get("completed_llm_calls")),
+    )
+    return used >= configured
+
+
+def _llm_budget_reason(llm_call_budget: dict[str, Any]) -> str:
+    configured = _int_value(llm_call_budget.get("configured_max_llm_calls"))
+    started = _int_value(llm_call_budget.get("started_llm_calls"))
+    completed = _int_value(llm_call_budget.get("completed_llm_calls"))
+    reason = _clean_str(llm_call_budget.get("exhausted_reason")) or ""
+    parts = ["LLM call budget exhausted"]
+    if configured:
+        parts.append(f"configured={configured}")
+    if started:
+        parts.append(f"started={started}")
+    if completed:
+        parts.append(f"completed={completed}")
+    if reason:
+        parts.append(f"reason={reason}")
+    return ", ".join(parts)
+
+
+def _mcp_failure_reasons(
+    *,
+    mcp_preflight: dict[str, Any],
+    mcp_runtime: dict[str, Any],
+    error_kinds: dict[str, int],
+) -> list[str]:
+    reasons: list[str] = []
+    if isinstance(mcp_preflight, dict) and mcp_preflight:
+        if mcp_preflight.get("ok") is False:
+            failed = mcp_preflight.get("failed_checks") or []
+            if not failed and isinstance(mcp_preflight.get("checks"), dict):
+                failed = [
+                    name
+                    for name, check in mcp_preflight["checks"].items()
+                    if not (isinstance(check, dict) and check.get("ok") is True)
+                ]
+            detail = f": {failed}" if failed else ""
+            reasons.append(f"MCP preflight failed{detail}")
+    if isinstance(mcp_runtime, dict) and mcp_runtime:
+        fatal = mcp_runtime.get("fatal") is True
+        ok = mcp_runtime.get("ok") is False
+        classification = _clean_str(mcp_runtime.get("classification")) or ""
+        if fatal or classification == "fatal_required_mcp_failure" or ok:
+            total = mcp_runtime.get("total")
+            suffix = f" ({total} occurrence(s))" if total else ""
+            reasons.append(f"MCP runtime failure{suffix}")
+    for key in ("mcp_list_tools", "mcp_sse", "sandbox_create"):
+        if error_kinds.get(key):
+            reasons.append(f"OpenSAGE ERROR log kind {key}: {error_kinds[key]}")
+    return _dedupe(reasons)
+
+
+def _llm_api_failure_reasons(error_kinds: dict[str, int], fatal_reasons: list[str]) -> list[str]:
+    reasons: list[str] = []
+    if error_kinds.get("litellm_api"):
+        reasons.append(f"LLM/API error log lines: {error_kinds['litellm_api']}")
+    for reason in fatal_reasons:
+        lowered = reason.lower()
+        if any(token in lowered for token in ("litellm", "openai", "api", "rate limit")):
+            reasons.append(reason)
+    return _dedupe(reasons)
+
+
+def _system_failure_reasons(
+    *,
+    status: Any,
+    returncode: Any,
+    error_jsons: list[Path],
+    error_kinds: dict[str, int],
+    fatal_reasons: list[str],
+) -> list[str]:
+    reasons: list[str] = []
+    if status and status not in {"finished", "cancelled", "cancelled_artifacts_imported"}:
+        reasons.append(f"OpenSAGE status is {status}")
+    if returncode not in (None, 0):
+        reasons.append(f"OpenSAGE returncode is {returncode}")
+    if error_jsons:
+        reasons.append(f"OpenSAGE task error file exists: {error_jsons[0]}")
+    for key in ("dispatcher_turn", "task_failed", "asyncio_task", "bash_completion_watcher"):
+        if error_kinds.get(key):
+            reasons.append(f"OpenSAGE ERROR log kind {key}: {error_kinds[key]}")
+    for reason in fatal_reasons:
+        if reason == "OpenSAGE did not produce poc":
+            continue
+        if reason.startswith("OpenSAGE failed samples:"):
+            continue
+        if reason not in reasons:
+            reasons.append(reason)
+    return _dedupe(reasons)
+
+
+def _incomplete_failure_reasons(*, status: Any, bridge: dict[str, Any]) -> list[str]:
+    reasons: list[str] = []
+    if status in {"cancelled", "cancelled_artifacts_imported"}:
+        reasons.append(f"OpenSAGE status is {status}")
+    if bridge.get("outer_timeout"):
+        reasons.append("OpenSAGE bridge hit outer timeout")
+    return reasons
+
+
+def _classify_run_failure(
+    *,
+    bridge: dict[str, Any],
+    result: dict[str, Any],
+    llm_call_budget: dict[str, Any],
+    mcp_preflight: dict[str, Any],
+    mcp_runtime: dict[str, Any],
+    error_kinds: dict[str, int],
+    fatal_reasons: list[str],
+    error_jsons: list[Path],
+    has_poc: bool,
+) -> tuple[str | None, list[str]]:
+    status = bridge.get("status") if isinstance(bridge, dict) else None
+    returncode = bridge.get("returncode") if isinstance(bridge, dict) else None
+
+    if _llm_budget_exhausted(llm_call_budget):
+        return FAILURE_LLM_BUDGET_EXHAUSTED, [_llm_budget_reason(llm_call_budget)]
+
+    mcp_reasons = _mcp_failure_reasons(
+        mcp_preflight=mcp_preflight,
+        mcp_runtime=mcp_runtime,
+        error_kinds=error_kinds,
+    )
+    if mcp_reasons:
+        return FAILURE_TOOLING_ERROR, mcp_reasons
+
+    api_reasons = _llm_api_failure_reasons(error_kinds, fatal_reasons)
+    if api_reasons:
+        return FAILURE_LLM_API_ERROR, api_reasons
+
+    incomplete_reasons = _incomplete_failure_reasons(status=status, bridge=bridge)
+    if incomplete_reasons:
+        return FAILURE_INCOMPLETE_OR_CANCELLED, incomplete_reasons
+
+    system_reasons = _system_failure_reasons(
+        status=status,
+        returncode=returncode,
+        error_jsons=error_jsons,
+        error_kinds=error_kinds,
+        fatal_reasons=fatal_reasons,
+    )
+    if system_reasons:
+        return FAILURE_SYSTEM_ERROR, system_reasons
+
+    failed = result.get("failed") if isinstance(result, dict) else None
+    if failed:
+        return FAILURE_AGENT_CAPABILITY, [f"OpenSAGE failed samples: {failed}"]
+    if not has_poc:
+        return FAILURE_AGENT_CAPABILITY, ["OpenSAGE did not produce poc"]
+    if fatal_reasons or error_kinds:
+        return FAILURE_UNKNOWN_ERROR, fatal_reasons or ["unclassified OpenSAGE ERROR log lines"]
+    return None, []
+
+
 def _read_run_record(sample_id: str, run_dir: Path) -> RunRecord:
     bridge = _read_json(run_dir / "opensage_bridge_status.json")
     result = _read_json(run_dir / "cybingym_result.json")
@@ -848,6 +1203,24 @@ def _read_run_record(sample_id: str, run_dir: Path) -> RunRecord:
     if error_jsons:
         fatal_reasons.append(f"OpenSAGE task error file exists: {error_jsons[0]}")
 
+    cost_info = _read_first_cost_info(run_dir, result)
+    llm_call_budget = _extract_llm_call_budget(result, cost_info)
+    mcp_preflight = _read_mcp_preflight(run_dir, result)
+    mcp_runtime = _read_mcp_runtime(run_dir, result)
+    deduped_fatal_reasons = _dedupe(fatal_reasons)
+    has_poc = any(value is True for value in (poc_exists, result_poc_found))
+    failure_category, failure_reasons = _classify_run_failure(
+        bridge=bridge,
+        result=result,
+        llm_call_budget=llm_call_budget,
+        mcp_preflight=mcp_preflight,
+        mcp_runtime=mcp_runtime,
+        error_kinds=error_kinds,
+        fatal_reasons=deduped_fatal_reasons,
+        error_jsons=error_jsons,
+        has_poc=has_poc,
+    )
+
     return RunRecord(
         sample_id=sample_id,
         run_dir=str(run_dir),
@@ -861,7 +1234,12 @@ def _read_run_record(sample_id: str, run_dir: Path) -> RunRecord:
         result_poc_found=result_poc_found if isinstance(result_poc_found, bool) else None,
         error_log_count=error_count,
         error_kinds=error_kinds,
-        fatal_reasons=_dedupe(fatal_reasons),
+        fatal_reasons=deduped_fatal_reasons,
+        failure_category=failure_category,
+        failure_reasons=failure_reasons,
+        llm_call_budget=llm_call_budget,
+        mcp_preflight=mcp_preflight,
+        mcp_runtime=mcp_runtime,
     )
 
 
@@ -983,6 +1361,14 @@ def main(argv: list[str] | None = None) -> int:
         help="all, errors, unresolved, not-solved, solved, or unsolved",
     )
     parser.add_argument(
+        "--failure-category",
+        default="",
+        help=(
+            "Only select histories whose classified failure category matches this "
+            "value. Use one of: " + ", ".join(FAILURE_CATEGORIES)
+        ),
+    )
+    parser.add_argument(
         "--model",
         default="",
         help="Only include history records for this OpenSAGE/Inspect model.",
@@ -1009,6 +1395,10 @@ def main(argv: list[str] | None = None) -> int:
         help="Print/write separate history summaries for every model found.",
     )
     args = parser.parse_args(argv)
+    try:
+        failure_category = _normalize_failure_category(args.failure_category)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     if args.per_model and args.model:
         parser.error("--per-model cannot be combined with --model")
@@ -1027,6 +1417,7 @@ def main(argv: list[str] | None = None) -> int:
             log_dir=args.log_dir,
             sample_ids=sample_ids,
             mode=args.filter,
+            failure_category=failure_category,
             provider=args.provider or None,
             include_records=args.include_records,
         )
@@ -1044,11 +1435,16 @@ def main(argv: list[str] | None = None) -> int:
         provider=args.provider or None,
         include_unknown_model=args.include_unknown_model,
     )
-    selected_ids = filter_histories(histories, args.filter)
+    selected_ids = filter_histories(
+        histories,
+        args.filter,
+        failure_category=failure_category,
+    )
     text = format_history_summary(
         histories,
         selected_ids=selected_ids,
         mode=args.filter,
+        failure_category=failure_category,
         model=args.model or None,
         provider=args.provider or None,
         include_unknown_model=args.include_unknown_model,
@@ -1065,6 +1461,7 @@ def main(argv: list[str] | None = None) -> int:
                         histories,
                         selected_ids=selected_ids,
                         mode=args.filter,
+                        failure_category=failure_category,
                         model=args.model or None,
                         provider=args.provider or None,
                         include_unknown_model=args.include_unknown_model,
