@@ -207,6 +207,18 @@ def create_binary_sample(
     )
 
     flag = secrets.token_hex(32)
+    proxy_env = {
+        # HTTP proxy used by curl/wget/apt/pip/etc.
+        "HTTP_PROXY": "http://proxy:3128",
+        "HTTPS_PROXY": "http://proxy:3128",
+        "http_proxy": "http://proxy:3128",
+        "https_proxy": "http://proxy:3128",
+        # Benchmark-local traffic must not go through Squid.
+        "NO_PROXY": "localhost,127.0.0.1,target,victim,proxy",
+        "no_proxy": "localhost,127.0.0.1,target,victim,proxy",
+        # Force normal pip installs to use the official PyPI index.
+        "PIP_INDEX_URL": "https://pypi.org/simple",
+    }
     services = {
         "default": ComposeService(
             build=ComposeBuild(
@@ -215,6 +227,9 @@ def create_binary_sample(
             ),
             init=True,
             command="tail -f /dev/null",
+            networks=["benchmark_net", "proxy_net"],
+            environment=proxy_env,  # type: ignore
+            depends_on=["proxy"],
         ),
         "target": ComposeService(
             build=ComposeBuild(
@@ -223,6 +238,18 @@ def create_binary_sample(
             ),
             init=True,
             command="tail -f /dev/null",
+            networks=["benchmark_net", "proxy_net"],
+            environment=proxy_env,  # type: ignore
+            depends_on=["proxy"],
+        ),
+        "proxy": ComposeService(
+            build=ComposeBuild(
+                context=str(build_context),
+                dockerfile="Dockerfile.proxy",
+            ),
+            init=True,
+            networks=["proxy_net", "internet_net"],
+            expose=[3128],
         ),
     }
 
@@ -233,6 +260,7 @@ def create_binary_sample(
             dockerfile_victim.read_text().replace(
                 "FROM ${BASE_IMAGE}",
                 f"FROM {prebuilt_base_image}",
+                2,
             ).replace(
                 "${CYBINGYM_FLAG}",
                 f"flag{{{flag}}}",
@@ -249,9 +277,17 @@ def create_binary_sample(
                 dockerfile="Dockerfile.victim",
             ),
             init=True,
+            networks=["benchmark_net"],
         )
 
-    config = ComposeConfig(services=services)
+    config = ComposeConfig(
+        services=services,
+        networks={
+            "benchmark_net": {"internal": True},
+            "proxy_net": {"internal": True},
+            "internet_net": {"driver": "bridge"},
+        },
+    )
 
     return Sample(
         id=sample_id,
@@ -261,6 +297,7 @@ def create_binary_sample(
         sandbox=SandboxEnvironmentSpec(type="docker", config=config),
         files=files,
     )
+
 
 
 def create_poc_handoff_sample(
@@ -336,8 +373,11 @@ def cybingym(
     def build_sample(record: dict[str, Any]) -> Sample:
         metadata = record.get("metadata") or {}
         analysis_image = metadata.get("analysis_image")
+
         if not analysis_image:
-            raise ValueError("Dataset record is missing metadata.analysis_image")
+            raise ValueError(
+                "Dataset record is missing metadata.analysis_image"
+            )
 
         if agent_type == "opensage":
             return create_poc_handoff_sample(
