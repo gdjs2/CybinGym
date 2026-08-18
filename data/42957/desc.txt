@@ -1,0 +1,1 @@
+A vulnerability exists where the code, when creating a stream object to return, uses the dictionary from the stack and relies on the reference held by the stack to ensure the dictionary does not disappear. If the repair code is called, it can clear the stack, potentially causing the dictionary to be lost while still in use.

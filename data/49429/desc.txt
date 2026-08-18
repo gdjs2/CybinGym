@@ -1,0 +1,1 @@
+A vulnerability exists in bigint.c within the ulshift and urshift functions, where bit-shifting is performed without checking if the value is zero. Bit-shifting zero always results in zero.

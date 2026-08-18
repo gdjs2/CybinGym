@@ -1,0 +1,127 @@
+# CyBinGym OpenSAGE config for solvers/ctf_agent.
+
+DEFAULT_IMAGE = "${DEFAULT_IMAGE}"
+PATCHED_IMAGE = "${PATCHED_IMAGE}"
+PWN_TOOLS_BASE_IMAGE = "${PWN_TOOLS_BASE_IMAGE}"
+PWN_TOOLS_DOCKERFILE = "${PWN_TOOLS_DOCKERFILE}"
+VICTIM_DOCKERFILE = "${VICTIM_DOCKERFILE}"
+GDB_MCP_DOCKERFILE = "${GDB_MCP_DOCKERFILE}"
+DOCKER_NETWORK = "${DOCKER_NETWORK}"
+TASK_NAME = "${TASK_NAME}"
+SESSION_ID = "${SESSION_ID}"
+GDB_PORT = ${GDB_PORT}
+IDA_PRO_MCP_PORT = ${IDA_PRO_MCP_PORT}
+PYGHIDRA_MCP_PORT = ${PYGHIDRA_MCP_PORT}
+CYBERGYM_TARGET_BINARY = "${CYBERGYM_TARGET_BINARY}"
+MAIN_MODEL = "${MAIN_MODEL}"
+CTF_TASK_DATA_DIR = "${CTF_TASK_DATA_DIR}"
+
+CTF_TRICKS_DIR = ""
+HACK_SKILLS_DIR = ""
+
+task_name = "${TASK_NAME}"
+src_dir_in_sandbox = "/shared/code"
+default_host = ""
+
+[sandbox]
+backend = "native"
+absolute_shared_data_path = "${ABSOLUTE_SHARED_DATA_PATH}"
+mount_host_paths = []
+
+[sandbox.sandboxes.main]
+image = "${DEFAULT_IMAGE}"
+timeout = 300
+network = "${DOCKER_NETWORK}"
+[sandbox.sandboxes.main.environment]
+CYBERGYM_TARGET_BINARY = "${CYBERGYM_TARGET_BINARY}"
+[sandbox.sandboxes.main.extra]
+initializer_timeout_sec = 1800
+
+[sandbox.sandboxes.pwn_tools]
+image = "${TASK_NAME}_pwn_tools"
+absolute_dockerfile_path = "${PWN_TOOLS_DOCKERFILE}"
+timeout = 600
+network = "${DOCKER_NETWORK}"
+mcp_services = ["ida_pro_mcp", "pyghidra_mcp"]
+volumes = ["/var/run/docker.sock:/var/run/docker.sock:rw"]
+[sandbox.sandboxes.pwn_tools.build_args]
+BASE_IMAGE = "${PWN_TOOLS_BASE_IMAGE}"
+[sandbox.sandboxes.pwn_tools.environment]
+IDA_MCP_PORT = "8002"
+PYGHIDRA_MCP_PORT = "8003"
+CYBERGYM_TARGET_BINARY = "${CYBERGYM_TARGET_BINARY}"
+[sandbox.sandboxes.pwn_tools.ports]
+"8002/tcp" = ${IDA_PRO_MCP_PORT}
+"8003/tcp" = ${PYGHIDRA_MCP_PORT}
+[sandbox.sandboxes.pwn_tools.extra]
+initializer_timeout_sec = 1800
+
+[sandbox.sandboxes.gdb_mcp]
+image = "${TASK_NAME}_gdb_mcp_local"
+absolute_dockerfile_path = "${GDB_MCP_DOCKERFILE}"
+command = ""
+network = "${DOCKER_NETWORK}"
+mcp_services = ["gdb_mcp"]
+[sandbox.sandboxes.gdb_mcp.build_args]
+BASE_IMAGE = "${DEFAULT_IMAGE}"
+[sandbox.sandboxes.gdb_mcp.environment]
+CYBERGYM_TARGET_BINARY = "${CYBERGYM_TARGET_BINARY}"
+[sandbox.sandboxes.gdb_mcp.ports]
+"1111/tcp" = ${GDB_PORT}
+[sandbox.sandboxes.gdb_mcp.extra]
+initializer_timeout_sec = 1800
+
+[sandbox.sandboxes.victim]
+image = "${TASK_NAME}_${SESSION_ID}_victim"
+absolute_dockerfile_path = "${VICTIM_DOCKERFILE}"
+command = ""
+timeout = 300
+[sandbox.sandboxes.victim.build_args]
+BASE_IMAGE = "${DEFAULT_IMAGE}"
+[sandbox.sandboxes.victim.environment]
+CYBERGYM_TARGET_BINARY = "${CYBERGYM_TARGET_BINARY}"
+CYBERGYM_PORT = "33333"
+[sandbox.sandboxes.victim.extra]
+initializer_timeout_sec = 1800
+
+[llm]
+[llm.model_configs.main]
+model_name = "${MAIN_MODEL}"
+temperature = 0.2
+max_tokens = 4096
+
+[model]
+models_python_file = "models.py"
+evaluation_replace_all_models_with_model_name = "${MAIN_MODEL}"
+budget = 0.0
+
+[[model.prices]]
+model = "moonshot/kimi-k3"
+prompt_per_million = 3.0
+completion_per_million = 15.0
+cached_per_million = 0.3
+
+[history]
+max_tool_response_length = 20000
+enable_quota_countdown = true
+
+[history.events_compaction]
+max_history_summary_length = 300000
+compaction_percent = 90
+
+[mcp]
+[mcp.services.gdb_mcp]
+sse_port = ${GDB_PORT}
+
+[mcp.services.ida_pro_mcp]
+sse_port = ${IDA_PRO_MCP_PORT}
+
+[mcp.services.pyghidra_mcp]
+sse_port = ${PYGHIDRA_MCP_PORT}
+
+[plugins]
+enabled = [
+    "history_summarizer_plugin",
+    "tool_response_summarizer_plugin",
+    "image_injection_plugin",
+]

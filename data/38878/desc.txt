@@ -1,0 +1,1 @@
+A heap use-after-free vulnerability exists in the repacker due to storing a reference to the link in overflow records. The link object may be freed if the sorted graph vector is resized, leading to potential use of a dangling pointer.

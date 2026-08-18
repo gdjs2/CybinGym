@@ -1,0 +1,1 @@
+A vulnerability exists in confile_utils where real-time signal parsing is incorrect, potentially leading to improper handling of signals.

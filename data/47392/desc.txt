@@ -1,0 +1,1 @@
+A heap-buffer-overflow READ occurs in Assimp::ASE::Parser::ParseLV1SoftSkinBlock.

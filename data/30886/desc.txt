@@ -1,0 +1,1 @@
+A vulnerability exists in parse.y where the string buffer (`tokbuf`) can overflow if `esclen` is not smaller than `len` (the original string length).

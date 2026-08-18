@@ -1,0 +1,1 @@
+A vulnerability exists in mruby-pack/pack.c within the unpack function, where the given length is not checked for positivity, potentially allowing out-of-bound array access.

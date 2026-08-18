@@ -1,0 +1,1 @@
+An out-of-bounds read occurs in ucl_expand_variable when the input ends with a '$', as calling ucl_check_variable in this case results in reading beyond the buffer.

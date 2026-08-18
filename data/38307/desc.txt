@@ -1,0 +1,1 @@
+A vulnerability exists in core:parse_via due to the lack of a safe check for the end of the buffer, which can be problematic when handling non-zero-terminated strings.

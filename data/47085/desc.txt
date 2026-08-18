@@ -1,0 +1,1 @@
+A vulnerability exists where MSAN is unable to correctly evaluate explicit_bzero() for memory zeroing in wire_ctx operations inside memzero(), potentially leading to false-positive issues due to improper memory zeroing detection.

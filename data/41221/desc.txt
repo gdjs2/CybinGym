@@ -1,0 +1,1 @@
+A crash occurs when reading DELTA_BYTE_ARRAY Parquet files in the C++ implementation.

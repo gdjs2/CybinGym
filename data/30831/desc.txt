@@ -1,0 +1,1 @@
+A buffer overflow exists in the AppendUintOption() function in coap-message.

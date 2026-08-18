@@ -1,0 +1,1 @@
+A vulnerability exists in bigint.c within the mrb_bint_copy function, where the dup operation is not properly allowed for bigints.

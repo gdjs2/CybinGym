@@ -1,0 +1,1 @@
+A vulnerability exists where, in an "in extremis" fallback case, the return code from Freetype is not acted upon, leaving a partially initialised glyph bitmap in memory. This bitmap is subsequently used, which results in a crash.

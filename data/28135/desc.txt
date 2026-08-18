@@ -1,0 +1,1 @@
+The ucl_strnstr function in its original implementation allows the strncmp call to read past the bounds of the haystack, leading to a potential out-of-bounds read when the remaining data in the haystack is insufficient to contain the needle.

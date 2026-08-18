@@ -1,0 +1,1 @@
+A vulnerability exists in core: parser/sdp where the delimiter size is not checked before comparison.

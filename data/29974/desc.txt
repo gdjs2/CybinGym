@@ -1,0 +1,1 @@
+A vulnerability exists in the TCP implementation where the absence of a SACK range check allows writing past the ends of the sack_left_edge and sack_right_edge arrays.

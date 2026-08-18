@@ -1,0 +1,1 @@
+An integer overflow exists in the QUIC protocol implementation within the function quic_len in ndpi/src/lib/protocols/quic.c. This overflow can lead to a segmentation fault caused by a wild memory read, as triggered through the call chain involving decrypt_initial_packet, get_clear_payload, and ndpi_search_quic in the same file.

@@ -1,0 +1,1 @@
+Uninitialized local variables in fuzz_die_cu_attrs.c and fuzz_die_cu_offset.c do not follow the requirements of libdwarf, potentially leading to security vulnerabilities.

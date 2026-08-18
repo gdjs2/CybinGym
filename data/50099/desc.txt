@@ -1,0 +1,1 @@
+A mistake in setting the CFF data buffer limit for fdarray subfonts in the code allows for a security vulnerability.

@@ -1,0 +1,1 @@
+A potential integer overflow occurs in mruby-sprintf/sprintf.c due to missing checks before casting.

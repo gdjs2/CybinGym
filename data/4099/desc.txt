@@ -1,0 +1,1 @@
+A vulnerability exists in the indexing logic of the unsafe-to-break marking for the 'stch' feature, which can lead to incorrect behavior when processing certain inputs.

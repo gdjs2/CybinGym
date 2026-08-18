@@ -1,0 +1,1 @@
+A vulnerability exists in the parse_to_param() function in sipmsgops, where improper parsing can occur. This issue is identified during the OpenSIPS Security Audit 2021 by Alfred Farrugia & Sandro Gauci (Enable Security).

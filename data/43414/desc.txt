@@ -1,0 +1,1 @@
+A bug exists where the condition 'i >= 0' is always true if 'disk_filename' does not contain a dot (.), causing 'i' to overflow. This affects the for loop's intended operation.

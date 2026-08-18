@@ -1,0 +1,1 @@
+The FP-dng decoder does not check for the float data size.

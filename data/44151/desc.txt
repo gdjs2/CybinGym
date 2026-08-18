@@ -1,0 +1,1 @@
+The function pdfi_TJ() holds a local, reference-counted reference to the operand array. If an error occurs, the operand stack reference to the array can disappear, causing the object to be freed while it is still in use.

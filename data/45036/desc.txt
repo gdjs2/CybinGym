@@ -1,0 +1,1 @@
+A vulnerability exists in reader_util.c where improper parsing of MPLS packets in the ndpi_workflow_process_packet function leads to a heap-buffer-overflow. This occurs due to reading beyond the allocated buffer, specifically at address 0x60300000578c, resulting in a READ of size 4 at the end of a 29-byte region.

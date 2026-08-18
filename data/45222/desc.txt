@@ -1,0 +1,1 @@
+A missing bounds check in the fdselect proc selection offset allows out-of-bounds access.

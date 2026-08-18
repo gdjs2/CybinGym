@@ -1,0 +1,1 @@
+A heap use after free vulnerability exists where UA_Subscription_answerPublishRequestsNoSubscription is not immediately sent before the session is deleted.

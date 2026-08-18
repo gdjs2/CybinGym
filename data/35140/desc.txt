@@ -1,0 +1,1 @@
+A security vulnerability exists in RegExp.prototype.[@@split]() when handling UTF8 strings.

@@ -1,0 +1,1 @@
+The minimal PS-like interpreter in pdfi allows the operand stack to be extended, but the code misses handling of memory allocation failure for the extended stack, leading to a potential vulnerability when an out-of-memory error occurs during stack extension.

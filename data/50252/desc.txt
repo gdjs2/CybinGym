@@ -1,0 +1,1 @@
+A division by zero occurs on an ill-formed parametric curve.

@@ -1,0 +1,1 @@
+A vulnerability exists due to missing brackets in a macro, which can lead to unintended macro expansion.
