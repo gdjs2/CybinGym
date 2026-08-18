@@ -1,1 +1,0 @@
-The vulnerability occurs in cardos where the calculation of the remaining bytes is incorrect, which can lead to a buffer overrun.

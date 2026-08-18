@@ -1,1 +1,0 @@
-GhostPDF allows an /Indexed color space to have a base space that is an array [/Pattern] in the affected file. Pattern spaces and Indexed spaces are not valid as the base space for an Indexed space in this context. The vulnerability occurs due to a lack of validation of the base space for Indexed color spaces.

@@ -1,1 +1,0 @@
-A vulnerability exists in libsepol/cil where the class in a classcommon is not properly ensured to be a kernel class. Map classes use the same struct as kernel classes, but only kernel classes use the pointer to a common class. When resolving a classcommon, the code does not verify that the found class is a kernel class and not a map class, which can lead to errors.

@@ -1,1 +1,0 @@
-A stack overflow vulnerability exists in ZipArchiveIOSystem::MapArchive due to allocation of a filename buffer of 256 bytes and copying the filename extracted from the zip file into it. If a filename is larger than 256 characters, the function writes out of bounds, leading to a stack overflow.

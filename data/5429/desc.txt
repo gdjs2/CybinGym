@@ -1,1 +1,0 @@
-The SetGrayscaleImage() function under allocates the color buffer, which can lead to a security vulnerability.

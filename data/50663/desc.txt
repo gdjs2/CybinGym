@@ -1,1 +1,0 @@
-A vulnerability exists in pcl::PLYReader::read in ply_io.cpp where a large value of `srcIdx` causes `srcIdx + cloud_->point_step` to overflow, bypassing the `cloud_->data.size()` check and leading to a crash.

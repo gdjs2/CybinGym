@@ -1,1 +1,0 @@
-A heap-buffer-overflow READ occurs in the tsk_stack_pop function.

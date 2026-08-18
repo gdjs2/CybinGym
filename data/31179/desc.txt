@@ -1,1 +1,0 @@
-An uninitialized value is used in the makeOrientDecision() function.

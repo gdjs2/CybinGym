@@ -1,1 +1,0 @@
-An integer overflow exists in the checking for valid header and trailer read lengths, potentially allowing incorrect validation of these lengths.

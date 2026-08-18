@@ -1,1 +1,0 @@
-The vulnerability occurs in ra_key where the error case of flb_sds_create_len not being handled may lead to unexpected behavior if flb_sds_create_len fails.

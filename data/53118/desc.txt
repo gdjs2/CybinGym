@@ -1,1 +1,0 @@
-The setDecodeDefaults function in TurboJPEG inherits a return value from setDecompDefaults() that is never needed, potentially leading to confusion or misuse in error handling.

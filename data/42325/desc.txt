@@ -1,1 +1,0 @@
-A broken Object stream can be 'repaired' in a way that uses object numbers outside the current size of the xref table in pdfi_repair_add_object(). This allows writing directly to the table using an out-of-bounds index, leading to memory corruption and potentially causing a segmentation fault during repair.

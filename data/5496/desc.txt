@@ -1,1 +1,0 @@
-A vulnerability exists in the PDF parsing code where the buffer is not initialized when parsing the PDF version, potentially leading to undefined behavior.

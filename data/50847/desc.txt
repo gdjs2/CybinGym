@@ -1,1 +1,0 @@
-A vulnerability exists in ttfOutliner__BuildGlyphOutlineAux() where points indices are not bounds checked.

@@ -1,1 +1,0 @@
-A vulnerability exists where the code does not validate the font type before using a descendent font in a Type 0 font if the descendent font has already been created, potentially allowing an invalid font type to be used as a CIDFont descendent.

@@ -1,1 +1,0 @@
-A vulnerability exists in GhostPDF where the W array values in an XRefStrm are not properly bounds-checked. If a PDF file contains a negative W entry, it is treated as valid, leading to an attempt to read that number of bytes (cast to unsigned) from a file into a buffer sized based on the signed value. This causes a buffer overrun and a subsequent crash.

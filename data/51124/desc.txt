@@ -1,1 +1,0 @@
-A negative array index occurs in the presence of a malformed .aff file.

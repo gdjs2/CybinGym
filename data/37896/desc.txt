@@ -1,1 +1,0 @@
-A vulnerability exists in stb.h where stb_splitpath does not correctly handle relative paths that include explicit drive specifiers.

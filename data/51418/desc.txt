@@ -1,1 +1,0 @@
-A vulnerability exists in the Ins_PUSHB function where values are read from the byte code buffer without performing a bounds check.

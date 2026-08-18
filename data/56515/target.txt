@@ -1,1 +1,0 @@
-fuzz_type_object

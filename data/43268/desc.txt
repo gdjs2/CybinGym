@@ -1,1 +1,0 @@
-A broken PDF file causes a repair to occur while reading an object and dereferencing an indirect reference. The repair process discards and rebuilds the xref table, which invalidates the reference to the xref entry. This results in the reference becoming outdated after reading an object.

@@ -1,1 +1,0 @@
-A vulnerability exists in the CIDFont fallback mechanism where the buffer may not be large enough when attempting to use the fallback name of <Registry>-<Ordering> from the CIDSystemInfo dictionary.

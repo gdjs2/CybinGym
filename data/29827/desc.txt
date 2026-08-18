@@ -1,1 +1,0 @@
-The XPACK experimental encoding for CRAM 4.0 draft contains malformed data bugs where the variables nbits and nval can be out of range, leading to a buffer overrun.

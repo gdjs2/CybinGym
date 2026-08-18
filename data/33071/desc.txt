@@ -1,1 +1,0 @@
-A heap-buffer-overflow occurs when reading frame vlmetalayers due to improper use of trailer_pos for bounds checking. The trailer_pos variable is only intended for enumerating offsets, not for validating content boundaries.

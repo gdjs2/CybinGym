@@ -1,1 +1,0 @@
-A vulnerability exists where buffer overruns can occur when checking Type 1 font keys.

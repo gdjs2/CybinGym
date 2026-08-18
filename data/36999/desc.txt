@@ -1,1 +1,0 @@
-An incorrect population count occurs in the hash map implementation in map, where setting the same key twice causes the population to be incorrectly incremented.

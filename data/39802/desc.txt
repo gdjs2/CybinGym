@@ -1,1 +1,0 @@
-An out-of-bounds read edge-case exists in the parse_msg() function. Severity: low.

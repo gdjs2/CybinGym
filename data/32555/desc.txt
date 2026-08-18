@@ -1,1 +1,0 @@
-An incorrect bounds check in glyph closure for context lookups in the [subset] component allows for a security vulnerability.

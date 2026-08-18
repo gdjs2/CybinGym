@@ -1,1 +1,0 @@
-In vm.c, failing to cast bigint length to unsigned causes lengths greater than 127 to be interpreted as negative.

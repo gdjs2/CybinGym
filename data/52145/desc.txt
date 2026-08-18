@@ -1,1 +1,0 @@
-The CFF interpreter in the Type 2 (CFF) interpreter executes the 'dup' operation in pdfwrite and related components without verifying that data is available, which, in the case of a corrupted font, results in reading off the bottom of the buffer.

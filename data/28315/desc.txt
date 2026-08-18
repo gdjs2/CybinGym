@@ -1,1 +1,0 @@
-A security vulnerability exists in the ChannelMaskBaseTlv::IsValid() function in meshcop-tlvs, where the function does not properly validate input, potentially allowing invalid channel mask values to be accepted.

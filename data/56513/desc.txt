@@ -1,1 +1,0 @@
-A vulnerability exists in fmt_fp.c within the mrb_format_float function, where the "%e" format specifier does not enforce a minimum precision of 1.

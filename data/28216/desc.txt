@@ -1,1 +1,0 @@
-A security vulnerability exists where PROXY parsing is not performed as part of every getHeaders call, potentially allowing improper handling of PROXY protocol headers.

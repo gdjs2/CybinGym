@@ -1,1 +1,0 @@
-A stack-buffer-overflow vulnerability exists in the tlsCheckUncommonALPN function in src/lib/protocols/tls.c, where the use of strncpy can write beyond the bounds of the 'str' buffer, leading to a stack-buffer-overflow error. This occurs due to improper handling of the buffer size when zeroing the entire string.

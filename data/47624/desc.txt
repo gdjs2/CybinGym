@@ -1,1 +1,0 @@
-A vulnerability exists in epan where a conversation key is not allocated, potentially leading to issues with conversation handling.

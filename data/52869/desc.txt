@@ -1,1 +1,0 @@
-A memory leak occurs in the xinclude module when running in fuzzing build mode.

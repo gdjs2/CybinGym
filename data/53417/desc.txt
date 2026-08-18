@@ -1,1 +1,0 @@
-A vulnerability exists where the path length is not checked, which can lead to a buffer underflow.

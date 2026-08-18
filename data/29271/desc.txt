@@ -1,1 +1,0 @@
-A use-after-scope vulnerability exists in SplObjectStorage::unserialize(), introduced by the recent switch to a zend_object. The function leaves behind a stack reference when unserializing the object, leading to unsafe memory access.

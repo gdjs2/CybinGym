@@ -1,1 +1,0 @@
-A potential buffer overflow exists in the string_unescape() function in the json module, which can be triggered by invalid input.

@@ -1,1 +1,0 @@
-A vulnerability exists in the eexec decoding process due to insufficient buffer bounds checking in the relevant code. The function fails to properly check for a zero length buffer in addition to a negative buffer size, which can lead to security issues.

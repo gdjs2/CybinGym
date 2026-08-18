@@ -1,1 +1,0 @@
-A vulnerability exists in the ani module where riffSizeData is not checked for the correct size before performing the quint32_le cast, potentially leading to incorrect behavior or security issues.

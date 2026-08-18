@@ -1,1 +1,0 @@
-A vulnerability exists in array.c where negative shift sizes are not checked.

@@ -1,1 +1,0 @@
-A division by zero in the code causes a matrix with NaNs, which leads to MIN_INT phases. This disrupts the graphics library when it tries to fit a tile to a device in the copy_mono function.

@@ -1,1 +1,0 @@
-A buffer in the code for a debug message lacks bounds checking before data is copied into it, which can lead to a security vulnerability.

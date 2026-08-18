@@ -1,1 +1,0 @@
-A vulnerability exists where duplicated tags are not checked, allowing profiles with duplicate tags to be processed instead of being discarded.

@@ -1,1 +1,0 @@
-A buffer overflow vulnerability exists due to improper resizing of the buf buffer.

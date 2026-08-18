@@ -1,1 +1,0 @@
-The oberthur module does not correctly check for return values, which may lead to security vulnerabilities.

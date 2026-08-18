@@ -1,1 +1,0 @@
-The vulnerability occurs because the function does not check the length read from the data against the data size passed into it, potentially allowing out-of-bounds reads.

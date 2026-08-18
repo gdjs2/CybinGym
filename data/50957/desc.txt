@@ -1,1 +1,0 @@
-The cgats parser is overly permissive and does not abort early when encountering invalid characters, allowing potentially malformed input to be processed. This vulnerability exists in code that is not used for ICC profile handling.

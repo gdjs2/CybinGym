@@ -1,1 +1,0 @@
-A security vulnerability exists in the Ins_NPUSHW() function where there is no bounds check on the code buffer. For each argument pushed, the function reads two values from the code buffer, which can lead to out-of-bounds reads.
