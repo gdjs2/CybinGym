@@ -5,7 +5,7 @@ from inspect_ai.tool import bash, tool_with
 from inspect_ai.agent import Agent, BridgedToolsSpec
 from inspect_ai.solver import Generate, Solver, TaskState, solver
 
-from inspect_swe import claude_code, codex_cli
+from inspect_swe import claude_code, codex_cli, kimi_code
 
 @solver
 def inject_system_to_user(prompt: str) -> Solver:
@@ -50,5 +50,15 @@ def codex_cli_solver() -> list[Solver | Agent]:
         codex_cli(
             web_search = "disabled",
             bridged_tools = swe_bridged_tools(),
+        )
+    ]
+
+def kimi_code_solver(version: str = "0.29.0") -> list[Solver | Agent]:
+    return [
+        inject_system_to_user(exploit_prompt),
+        kimi_code(
+            disallowed_tools = ["WebSearch", "FetchURL"],
+            bridged_tools = swe_bridged_tools(),
+            version = version,
         )
     ]

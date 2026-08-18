@@ -8,7 +8,7 @@ from scorer import cybingym_scorer
 
 from solvers.react import react_solver
 from solvers.openai_agent import openai_agent
-from solvers.swe_agents import claude_code_solver, codex_cli_solver
+from solvers.swe_agents import claude_code_solver, codex_cli_solver, kimi_code_solver
 
 from inspect_ai import task, Task
 from inspect_ai.util import ComposeBuild, ComposeConfig, ComposeService, SandboxEnvironmentSpec
@@ -23,6 +23,14 @@ SOLVER_MAP = {
     "claude_code": claude_code_solver(),
     "codex": codex_cli_solver(),
 }
+
+def _select_solver(agent_type: str, kimi_code_version: str = "0.29.0"):
+    if agent_type == "kimi_code":
+        return kimi_code_solver(version=kimi_code_version)
+    return SOLVER_MAP.get(
+        agent_type,
+        SOLVER_MAP["basic"],
+    )
 
 def create_binary_sample(
     prompt: str,
@@ -233,6 +241,7 @@ def create_binary_sample(
 def create_cybingym_task(
     dataset_file_path: Path,
     agent_type: str,
+    kimi_code_version: str = "0.29.0",
 ) -> Task:
     def build_sample(record: dict[str, Any]) -> Sample:
         metadata = record.get("metadata") or {}
@@ -257,10 +266,7 @@ def create_cybingym_task(
             str(dataset_file_path),
             sample_fields=build_sample,
         ),
-        solver=SOLVER_MAP.get(
-            agent_type,
-            SOLVER_MAP["basic"],
-        ),
+        solver=_select_solver(agent_type, kimi_code_version),
         scorer=cybingym_scorer(),
         fail_on_error=False,
     )
@@ -268,15 +274,17 @@ def create_cybingym_task(
 MAIN_SOURCE_DIR = Path(__file__).resolve().parent
 
 @task
-def cybingym(agent_type: str = "basic") -> Task:
+def cybingym(agent_type: str = "basic", kimi_code_version: str = "0.29.0") -> Task:
     return create_cybingym_task(
         dataset_file_path=MAIN_SOURCE_DIR / "dataset.json",
         agent_type=agent_type,
+        kimi_code_version=kimi_code_version,
     )
 
 @task
-def cybingym20(agent_type: str = "basic") -> Task:
+def cybingym20(agent_type: str = "basic", kimi_code_version: str = "0.29.0") -> Task:
     return create_cybingym_task(
         dataset_file_path=MAIN_SOURCE_DIR / "dataset20.json",
         agent_type=agent_type,
+        kimi_code_version=kimi_code_version,
     )

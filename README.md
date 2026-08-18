@@ -28,3 +28,10 @@ This command will run CybinGym on inspect_ai's [`react()`](https://inspect.aisi.
 ```bash
 uv run inspect eval cybingym.py -T agent_type=basic --model openai/gpt-4o-mini
 ```
+
+Run with Kimi Code through the native Moonshot provider:
+```bash
+export MOONSHOT_API_KEY="your-moonshot-api-key"
+uv run inspect eval cybingym.py -T agent_type=kimi_code --model moonshot/kimi-k3
+```
+The Kimi Code binary defaults to version `0.29.0`. Override it with `-T kimi_code_version=<version>` when testing another release.

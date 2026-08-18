@@ -492,7 +492,7 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.115.0" },
     { name = "docker", specifier = ">=7.1.0" },
     { name = "inspect-ai", specifier = ">=0.3.246" },
-    { name = "inspect-swe", specifier = ">=0.2.65" },
+    { name = "inspect-swe", specifier = ">=0.2.70" },
     { name = "openai", specifier = ">=2.45.0" },
     { name = "openai-agents", specifier = ">=0.17.5" },
 ]
