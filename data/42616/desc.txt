@@ -1,1 +1,0 @@
-An off-by-one error exists in the check on the xref limit, as the size of the xref includes object 0. The stream object number is not properly checked against the size of the xref minus 1.

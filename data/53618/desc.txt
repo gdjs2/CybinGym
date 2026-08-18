@@ -1,1 +1,0 @@
-The Cr2Decompressor does not check that tiles cover the entire image.

@@ -1,1 +1,0 @@
-A vulnerability in fmt_fp.c allows a buffer overflow due to lack of truncation of precision.

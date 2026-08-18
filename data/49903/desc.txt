@@ -1,1 +1,0 @@
-The slide_hash() function in deflate reads potentially uninitialized memory, specifically prev[n], which may contain garbage values. However, the result of this read is never used.

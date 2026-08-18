@@ -1,1 +1,0 @@
-A use-of-uninitialized-memory issue exists, where uninitialized memory is accessed during execution.

@@ -1,1 +1,0 @@
-A vulnerability in numeric.c within the int_to_s function allows bypassing the base range check.

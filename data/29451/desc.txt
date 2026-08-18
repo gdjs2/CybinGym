@@ -1,1 +1,0 @@
-In libsepol/cil, there are six instances during CIL policy building or resolution where an error is detected, but SEPOL_OK is incorrectly returned instead of SEPOL_ERR. This allows the policy compiler to continue processing when it should terminate with an error.

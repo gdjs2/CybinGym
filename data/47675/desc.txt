@@ -1,1 +1,0 @@
-A stack-buffer-overflow READ occurs in the cardos module when reading file information blocks.

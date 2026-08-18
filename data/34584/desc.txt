@@ -1,1 +1,0 @@
-A security vulnerability exists where Uint8ClampedArray is implemented as a separate, unrelated class instead of using TypedArray in LibJS and LibWeb. This prevents Uint8ClampedArray from having typed array properties and from being available to the runtime, potentially leading to inconsistent behavior and security issues.

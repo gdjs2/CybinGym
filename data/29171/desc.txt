@@ -1,1 +1,0 @@
-An ASAN unknown-read vulnerability occurs due to a 32-bit integer overflow in the off_pos variable, leading to out-of-bounds memory access.

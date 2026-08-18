@@ -1,1 +1,0 @@
-A stack-buffer-overflow occurs in the code when a tag is found and the output size is not checked to ensure it is within the bounds of the buffer.

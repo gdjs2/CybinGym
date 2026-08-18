@@ -1,1 +1,0 @@
-A heap-buffer overflow exists in the SoftEther protocol dissector, specifically in the dissect_softether_host_fqdn function in src/lib/protocols/softether.c. The vulnerability is triggered during a call to strncmp, leading to a read beyond the allocated heap buffer. This issue is exposed when processing certain packets in ndpi_search_softether and related functions.

@@ -1,1 +1,0 @@
-The Type 2 charstring interpreter in the code lacks a stack bounds check, which can lead to a security vulnerability.

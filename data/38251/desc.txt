@@ -1,1 +1,0 @@
-A vulnerability exists in vm.c where `ci->acc` (of type `int16_t`) may overflow.

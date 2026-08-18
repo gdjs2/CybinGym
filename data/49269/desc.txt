@@ -1,1 +1,0 @@
-A security vulnerability exists in bigint.c within the digits function, where zero length bigints are not properly checked.

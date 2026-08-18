@@ -1,1 +1,0 @@
-stbi_read_fuzzer

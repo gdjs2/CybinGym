@@ -1,1 +1,0 @@
-A buffer overflow bug exists in the Dutch accented IJ titlecase handling in ICU, specifically affecting the processing of certain character sequences.

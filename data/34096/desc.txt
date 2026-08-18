@@ -1,1 +1,0 @@
-A vulnerability exists in parsing case/default statements within an unclosed function block inside a switch statement.

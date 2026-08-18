@@ -1,1 +1,0 @@
-A buffer overrun occurs in the dotnet module when the strncpy function is called with a source buffer shorter than MAX_TYPELIB_SIZE and the string is not null-terminated, causing strncpy to read past the end of the buffer. The length of the string is indicated in the byte before the string itself, and this length is equal to or less than MAX_TYPELIB_SIZE (255).

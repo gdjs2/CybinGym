@@ -1,1 +1,0 @@
-A vulnerability exists in the Type 1/2 charstring execution state stack due to an incorrect bounds checking macro, which is not used in the minimal CharString interpreter found in pdfwrite and related components.

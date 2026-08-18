@@ -1,1 +1,0 @@
-A vulnerability exists in the Ins_ISECT() function due to a missing bounds check on available points.

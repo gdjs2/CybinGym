@@ -1,1 +1,0 @@
-The Teredo::DetectProtocol function lacks sufficient length checks, which may allow processing of data with incorrect or insufficient length.

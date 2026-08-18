@@ -1,1 +1,0 @@
-A vulnerability exists in codegen.c within the mrb_last_insn function, where there is no check for a previous instruction on the top, potentially leading to unsafe behavior.

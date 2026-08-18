@@ -1,1 +1,0 @@
-A regression in xmlStaticCopyNode occurs because it does not account for coalesced text nodes. This issue can be triggered if other code fails to coalesce text nodes properly, as seen in xinclude.c.

@@ -1,1 +1,0 @@
-The function unpack_BER() in unpack.c assumes that the string length is not zero.

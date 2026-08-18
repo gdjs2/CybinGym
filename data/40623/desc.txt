@@ -1,1 +1,0 @@
-A vulnerability exists where the code does not check if len is less than 2, which can result in len becoming negative.

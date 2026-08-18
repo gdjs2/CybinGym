@@ -1,1 +1,0 @@
-A vulnerability exists in numeric.c within the cmpnum function, where mrb_bigint_cmp() is incorrectly called if v2 is bigint instead of v1.

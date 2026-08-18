@@ -1,1 +1,0 @@
-LibJS fails to detect invalid unicode and continues lexing, potentially swallowing invalid unicode points and skipping valid ASCII characters. This behavior can be dangerous, as it may skip a '"' character, resulting in an unclosed string. This creates ambiguity in script execution, making it unclear what code actually gets executed.

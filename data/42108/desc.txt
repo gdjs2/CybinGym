@@ -1,1 +1,0 @@
-A stack buffer overflow occurs in LibRaw::parseCR3 due to an off-by-one error in the line `AtomNameStack[(nesting + 1) * 4] = '\0';` when `nesting` is `31`, causing a write to `AtomNameStack[128]` while the buffer size is only 128. The function already checks for `nesting > 31` and returns an error for too deep nesting, but the overflow still occurs at the boundary condition.

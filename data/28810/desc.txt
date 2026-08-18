@@ -1,1 +1,0 @@
-An unsigned integer overflow occurs in the Hcr_State_BODY_SIGN_ESC__ESC_WORD() function.

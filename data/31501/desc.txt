@@ -1,1 +1,0 @@
-A vulnerability exists where the input buffer is not checked before being passed to libheif.

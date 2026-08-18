@@ -1,1 +1,0 @@
-A vulnerability exists in codegen.c where stack space for block arguments is not properly maintained.

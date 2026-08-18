@@ -1,1 +1,0 @@
-A bounds overflow exists in JPGLoader in LibGfx, which can be triggered during image processing. This issue is identified through fuzzing and may lead to undefined behavior or security risks.

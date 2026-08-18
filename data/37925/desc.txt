@@ -1,1 +1,0 @@
-The vulnerability arises because ErrnoCode is assumed to exist outside of __serenity__, which is not the case. This assumption affects the functionality of Error and ErrorOr<T> in Lagom, leading to potential issues when ErrnoCode is not defined.

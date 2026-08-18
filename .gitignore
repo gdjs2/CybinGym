@@ -1,14 +1,4 @@
 __pycache__/
 .venv/
-.env
-evals/
-*.eval
-evals/**/*.json
-evals/**/*.csv
-logs/**/*_debug.log
 logs/
-result_*
-
-# Generated trace exports
-reports/**/*_debug.log
-reports/**/debug.log
+.env

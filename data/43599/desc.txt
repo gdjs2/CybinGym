@@ -1,1 +1,0 @@
-A vulnerability exists in the CFF dictionary code where file offsets are not validated for negative values. The code checks for values that are too large but fails to check for negative offset values.

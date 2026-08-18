@@ -1,1 +1,0 @@
-The vulnerability allows fuzzing input to be used as the output buffer in fuzz_card, potentially leading to unintended behavior or security issues.

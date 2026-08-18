@@ -1,1 +1,0 @@
-A vulnerability exists in the handling of Type 2 charstrings where the "control" stack used during Subrs/GlobalSubrs execution lacks proper bounds checking, potentially allowing stack overflow.

@@ -1,1 +1,0 @@
-A bug exists in the `OP_LOADI32` peephole optimization in `codegen.c`.
