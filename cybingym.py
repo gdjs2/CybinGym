@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from model_costs import register_frontier_model_costs
 from scorer import cybingym_crash_scorer, cybingym_scorer
 from solvers.opensage_history import (
     build_opensage_history,
@@ -363,6 +364,8 @@ def cybingym(
     opensage_history_include_unknown_model: bool = False,
     evaluation_level: str = "full",
 ):
+    register_frontier_model_costs()
+
     evaluation_level = _normalize_evaluation_level(evaluation_level)
     if evaluation_level == "crash" and agent_type not in CRASH_ONLY_AGENT_TYPES:
         raise ValueError(

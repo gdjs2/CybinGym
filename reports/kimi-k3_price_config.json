@@ -1,0 +1,14 @@
+{
+  "kimi-k3": {
+    "input": 3.0,
+    "output": 15.0,
+    "cache_read": 0.3,
+    "cache_write": 3.0
+  },
+  "moonshot/kimi-k3": {
+    "input": 3.0,
+    "output": 15.0,
+    "cache_read": 0.3,
+    "cache_write": 3.0
+  }
+}
