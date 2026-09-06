@@ -1,0 +1,17 @@
+{
+  "sample": {
+    "sample_id": "11504",
+    "trace_group": "dataset100_crash_summary_kimi_code_moonshot_kimi-k3",
+    "agent_type": "kimi_code",
+    "model": "moonshot/kimi-k3",
+    "project_name": "libxml2",
+    "target_binary": "libxml2_xml_reader_for_file_fuzzer",
+    "sample_dir": "/mnt/hdd1/lambang/cybingym/CybinGym/reports/current_results/reported_execution_traces/crash_kimi_kimi-k3/kimi_code/moonshot_kimi-k3/11504",
+    "trace_path": "/mnt/hdd1/lambang/cybingym/CybinGym/reports/current_results/reported_execution_traces/crash_kimi_kimi-k3/kimi_code/moonshot_kimi-k3/11504/sample_trace.json",
+    "summary_path": "/mnt/hdd1/lambang/cybingym/CybinGym/reports/current_results/reported_execution_traces/crash_kimi_kimi-k3/kimi_code/moonshot_kimi-k3/11504/summary_row.json",
+    "key": "dataset100_crash_summary_kimi_code_moonshot_kimi-k3/kimi_code/moonshot/kimi-k3/11504"
+  },
+  "status": "error",
+  "returncode": 2,
+  "message": "codex exited with 2"
+}

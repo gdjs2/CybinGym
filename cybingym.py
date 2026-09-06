@@ -31,6 +31,7 @@ from inspect_ai.util import (
 MAXIMUM_ATTEMPTS = 1
 EVALUATION_LEVELS = {"crash", "full"}
 CRASH_ONLY_AGENT_TYPES = {"claude_code", "codex", "kimi_code"}
+CLI_AGENT_TYPES = CRASH_ONLY_AGENT_TYPES
 OPENSAGE_SMOKE_SAMPLE_IDS = "10013,10055,10096"
 CYBINGYM_DIR = Path(__file__).resolve().parent
 DEFAULT_OPENSAGE_AGENT_DIR = str(CYBINGYM_DIR / "solvers" / "ctf_agent")
@@ -75,6 +76,17 @@ def _normalize_evaluation_level(evaluation_level: str) -> str:
             f"{sorted(EVALUATION_LEVELS)}, got {evaluation_level!r}"
         )
     return normalized
+
+
+def _sample_files_for_vulnerability_description(
+    files: dict[str, str] | None,
+    *,
+    include_vulnerability_description: bool,
+) -> dict[str, str] | None:
+    if include_vulnerability_description or not files:
+        return files
+    filtered = {name: path for name, path in files.items() if name != "desc.txt"}
+    return filtered or None
 
 
 def _infer_provider(model_name: str) -> str:
@@ -127,6 +139,7 @@ def _select_solver(
     opensage_base_port: int,
     opensage_port_stride: int,
     evaluation_level: str,
+    include_vulnerability_description: bool,
 ):
     if agent_type == "openai":
         from solvers.openai_agent import openai_agent
@@ -135,15 +148,25 @@ def _select_solver(
     if agent_type == "claude_code":
         from solvers.swe_agents import claude_code_solver
 
-        return claude_code_solver(evaluation_level=evaluation_level)
+        return claude_code_solver(
+            evaluation_level=evaluation_level,
+            include_vulnerability_description=include_vulnerability_description,
+        )
     if agent_type == "codex":
         from solvers.swe_agents import codex_cli_solver
 
-        return codex_cli_solver(evaluation_level=evaluation_level)
+        return codex_cli_solver(
+            evaluation_level=evaluation_level,
+            include_vulnerability_description=include_vulnerability_description,
+        )
     if agent_type == "kimi_code":
         from solvers.swe_agents import kimi_code_solver
 
-        return kimi_code_solver(version=kimi_code_version, evaluation_level=evaluation_level)
+        return kimi_code_solver(
+            version=kimi_code_version,
+            evaluation_level=evaluation_level,
+            include_vulnerability_description=include_vulnerability_description,
+        )
     if agent_type == "opensage":
         from solvers.opensage_agent import opensage_solver
 
@@ -363,6 +386,7 @@ def cybingym(
     opensage_history_provider: str = "",
     opensage_history_include_unknown_model: bool = False,
     evaluation_level: str = "full",
+    include_vulnerability_description: bool = True,
 ):
     register_frontier_model_costs()
 
@@ -372,6 +396,18 @@ def cybingym(
             "evaluation_level=crash is currently supported only for "
             f"agent_type in {sorted(CRASH_ONLY_AGENT_TYPES)}; got {agent_type!r}"
         )
+    if not include_vulnerability_description:
+        if evaluation_level != "full":
+            raise ValueError(
+                "include_vulnerability_description=False is currently supported "
+                "only for evaluation_level='full'"
+            )
+        if agent_type not in CLI_AGENT_TYPES:
+            raise ValueError(
+                "include_vulnerability_description=False is currently supported "
+                f"only for CLI agent types {sorted(CLI_AGENT_TYPES)}; "
+                f"got {agent_type!r}"
+            )
 
     def build_sample(record: dict[str, Any]) -> Sample:
         metadata = record.get("metadata") or {}
@@ -397,7 +433,10 @@ def cybingym(
             sample_id=record.get("id"),
             target=record.get("target", ""),
             metadata=metadata,
-            files=record.get("files"),
+            files=_sample_files_for_vulnerability_description(
+                record.get("files"),
+                include_vulnerability_description=include_vulnerability_description,
+            ),
             evaluation_level=evaluation_level,
         )
 
@@ -528,6 +567,7 @@ def cybingym(
             opensage_base_port=opensage_base_port,
             opensage_port_stride=opensage_port_stride,
             evaluation_level=evaluation_level,
+            include_vulnerability_description=include_vulnerability_description,
         ),
         scorer=cybingym_crash_scorer() if evaluation_level == "crash" else cybingym_scorer(
             opensage_model=history_model or opensage_model,

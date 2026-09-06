@@ -1,0 +1,19 @@
+{
+  "command": [
+    "../../node_modules/.bin/codex",
+    "exec",
+    "--sandbox",
+    "read-only",
+    "--ask-for-approval",
+    "never",
+    "--ephemeral",
+    "-C",
+    "/mnt/hdd1/lambang/cybingym/CybinGym",
+    "--output-schema",
+    "reports/current_results/codex_trace_audit/dataset100_crash_summary_codex_openai_gpt-5.6/codex/openai_gpt-5.6/13940/verdict.schema.json",
+    "-o",
+    "reports/current_results/codex_trace_audit/dataset100_crash_summary_codex_openai_gpt-5.6/codex/openai_gpt-5.6/13940/verdict.json",
+    "--json",
+    "-"
+  ]
+}

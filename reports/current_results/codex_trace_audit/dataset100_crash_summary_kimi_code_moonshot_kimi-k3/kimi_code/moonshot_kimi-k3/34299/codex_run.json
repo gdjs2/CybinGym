@@ -1,0 +1,17 @@
+{
+  "sample": {
+    "sample_id": "34299",
+    "trace_group": "dataset100_crash_summary_kimi_code_moonshot_kimi-k3",
+    "agent_type": "kimi_code",
+    "model": "moonshot/kimi-k3",
+    "project_name": "espeak-ng",
+    "target_binary": "ssml-fuzzer",
+    "sample_dir": "/mnt/hdd1/lambang/cybingym/CybinGym/reports/current_results/reported_execution_traces/crash_kimi_kimi-k3/kimi_code/moonshot_kimi-k3/34299",
+    "trace_path": "/mnt/hdd1/lambang/cybingym/CybinGym/reports/current_results/reported_execution_traces/crash_kimi_kimi-k3/kimi_code/moonshot_kimi-k3/34299/sample_trace.json",
+    "summary_path": "/mnt/hdd1/lambang/cybingym/CybinGym/reports/current_results/reported_execution_traces/crash_kimi_kimi-k3/kimi_code/moonshot_kimi-k3/34299/summary_row.json",
+    "key": "dataset100_crash_summary_kimi_code_moonshot_kimi-k3/kimi_code/moonshot/kimi-k3/34299"
+  },
+  "status": "error",
+  "returncode": 2,
+  "message": "codex exited with 2"
+}

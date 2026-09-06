@@ -1,0 +1,19 @@
+{
+  "command": [
+    "../../node_modules/.bin/codex",
+    "exec",
+    "--sandbox",
+    "read-only",
+    "--ask-for-approval",
+    "never",
+    "--ephemeral",
+    "-C",
+    "/mnt/hdd1/lambang/cybingym/CybinGym",
+    "--output-schema",
+    "reports/current_results/codex_trace_audit/dataset100_crash_summary_kimi_code_moonshot_kimi-k3/kimi_code/moonshot_kimi-k3/46244/verdict.schema.json",
+    "-o",
+    "reports/current_results/codex_trace_audit/dataset100_crash_summary_kimi_code_moonshot_kimi-k3/kimi_code/moonshot_kimi-k3/46244/verdict.json",
+    "--json",
+    "-"
+  ]
+}

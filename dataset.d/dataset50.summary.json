@@ -1,0 +1,288 @@
+{
+  "outputs": {
+    "dataset_json": "/mnt/hdd1/lambang/cybingym/cybingym_logs/dataset50.json",
+    "ids_txt": "/mnt/hdd1/lambang/cybingym/cybingym_logs/dataset50.ids.txt",
+    "selection_csv": "/mnt/hdd1/lambang/cybingym/cybingym_logs/dataset50.selection.csv",
+    "summary_json": "/mnt/hdd1/lambang/cybingym/cybingym_logs/dataset50.summary.json"
+  },
+  "policy": {
+    "difficulty_percent": {
+      "easy": 20,
+      "hard": 40,
+      "medium": 40
+    },
+    "exploitability_bands": [
+      "preferred_write",
+      "preferred_other",
+      "other_write",
+      "other"
+    ],
+    "joint_cells": "flexible; family and overall difficulty margins are exact",
+    "max_project_count": 5,
+    "max_target_binary_count": 5,
+    "rounding": "Hamilton largest remainder; policy order breaks equal remainders",
+    "selection_priority": [
+      "restrict availability to IDs in dataset100.json",
+      "quality eligibility inherited from dataset100 selection",
+      "exact family and difficulty margins",
+      "retain eligible extra-priority IDs from dataset20.json",
+      "project cap: at most 5 samples per project",
+      "target-binary cap: at most 5 samples per binary name",
+      "project/binary/fine-class/raw-type diversity",
+      "classification confidence",
+      "seeded deterministic tie-break"
+    ],
+    "selection_tiers": [
+      "extra_priority",
+      "codex_false",
+      "protected_priority",
+      "fallback"
+    ],
+    "vulnerability_family_percent": {
+      "initialization_error": 9,
+      "invalid_deallocation": 10,
+      "invalid_pointer_access": 15,
+      "spatial_memory_error": 40,
+      "temporal_memory_error": 20,
+      "type_safety_error": 6
+    }
+  },
+  "pool": {
+    "difficulty": {
+      "easy": 20,
+      "hard": 40,
+      "medium": 40
+    },
+    "eligible_count": 100,
+    "eligible_extra_priority_count": 20,
+    "exploitability_bands": {
+      "other": 59,
+      "other_write": 2,
+      "preferred_other": 27,
+      "preferred_write": 12
+    },
+    "extra_priority_count": 20,
+    "fine_grained_vulnerability_class": {
+      "buffer_bounds_unspecified": 2,
+      "buffer_overread": 26,
+      "double_free": 6,
+      "expired_pointer_dereference": 2,
+      "heap_out_of_bounds_write": 6,
+      "incorrect_cast": 6,
+      "index_out_of_bounds": 2,
+      "invalid_free_unspecified": 4,
+      "null_pointer_dereference": 3,
+      "out_of_bounds_write_region_unspecified": 1,
+      "stack_out_of_bounds_write": 3,
+      "stack_use_after_return": 1,
+      "uninitialized_variable": 9,
+      "untrusted_pointer_dereference": 12,
+      "use_after_free": 17
+    },
+    "parent_dataset_count": 100,
+    "vulnerability_family": {
+      "initialization_error": 9,
+      "invalid_deallocation": 10,
+      "invalid_pointer_access": 15,
+      "spatial_memory_error": 40,
+      "temporal_memory_error": 20,
+      "type_safety_error": 6
+    }
+  },
+  "requested_count": 50,
+  "seed": 20260805,
+  "selected": {
+    "difficulty": {
+      "easy": 10,
+      "hard": 20,
+      "medium": 20
+    },
+    "explicit_write_count": 8,
+    "exploitability_bands": {
+      "other": 30,
+      "other_write": 1,
+      "preferred_other": 12,
+      "preferred_write": 7
+    },
+    "fallback_count": 30,
+    "fine_grained_vulnerability_class": {
+      "buffer_bounds_unspecified": 2,
+      "buffer_overread": 11,
+      "double_free": 2,
+      "heap_out_of_bounds_write": 2,
+      "incorrect_cast": 3,
+      "index_out_of_bounds": 2,
+      "invalid_free_unspecified": 3,
+      "null_pointer_dereference": 2,
+      "out_of_bounds_write_region_unspecified": 1,
+      "stack_out_of_bounds_write": 2,
+      "stack_use_after_return": 1,
+      "uninitialized_variable": 4,
+      "untrusted_pointer_dereference": 6,
+      "use_after_free": 9
+    },
+    "joint_distribution": {
+      "initialization_error|hard": 4,
+      "invalid_deallocation|easy": 4,
+      "invalid_deallocation|hard": 1,
+      "invalid_pointer_access|easy": 4,
+      "invalid_pointer_access|hard": 1,
+      "invalid_pointer_access|medium": 3,
+      "spatial_memory_error|easy": 1,
+      "spatial_memory_error|hard": 6,
+      "spatial_memory_error|medium": 13,
+      "temporal_memory_error|hard": 8,
+      "temporal_memory_error|medium": 2,
+      "type_safety_error|easy": 1,
+      "type_safety_error|medium": 2
+    },
+    "max_achievable_selection_tiers": {
+      "codex_false": 0,
+      "extra_priority": 20,
+      "fallback": 30,
+      "protected_priority": 0
+    },
+    "priority_count": 20,
+    "priority_sources": {
+      "dataset20.json": 20
+    },
+    "projects": {
+      "arrow": 1,
+      "assimp": 1,
+      "botan": 1,
+      "c-blosc2": 1,
+      "curl": 1,
+      "flac": 1,
+      "fluent-bit": 1,
+      "ghostscript": 3,
+      "glib": 1,
+      "graphicsmagick": 2,
+      "h2o": 1,
+      "harfbuzz": 1,
+      "htslib": 1,
+      "karchive": 1,
+      "kimageformats": 1,
+      "libaom": 1,
+      "libarchive": 1,
+      "libfdk-aac": 1,
+      "libjpeg-turbo": 1,
+      "libpcap": 1,
+      "libxml2": 2,
+      "libxslt": 1,
+      "lwan": 2,
+      "mruby": 2,
+      "mupdf": 1,
+      "nginx": 1,
+      "open62541": 1,
+      "openexr": 1,
+      "opensc": 2,
+      "openssl": 1,
+      "openthread": 2,
+      "openvswitch": 1,
+      "poppler": 2,
+      "radare2": 1,
+      "rnp": 1,
+      "serenity": 2,
+      "skia": 1,
+      "usrsctp": 1,
+      "yara": 1,
+      "zstd": 1
+    },
+    "selection_sources": {
+      "extra_priority_membership": 20,
+      "extra_priority_tier": 20,
+      "fallback": 30
+    },
+    "selection_tiers": {
+      "codex_false": 0,
+      "extra_priority": 20,
+      "fallback": 30,
+      "protected_priority": 0
+    },
+    "target_binaries": {
+      "FuzzSQLParser": 1,
+      "FuzzShell": 1,
+      "aacDecoder_DecodeFrame": 1,
+      "arrow-ipc-stream-fuzz": 1,
+      "assimp_fuzzer": 1,
+      "av1_dec_fuzzer": 1,
+      "cli-uart-received-fuzzer": 1,
+      "coder_MVG_fuzzer": 1,
+      "coder_PTIF_fuzzer": 1,
+      "curl_fuzzer_ftp": 1,
+      "decompress_frame_fuzzer": 1,
+      "dotnet_fuzzer": 1,
+      "flb-it-fuzz-parser_fuzzer_OSSFUZZ": 1,
+      "fuzz_binary_message": 1,
+      "fuzz_filter": 1,
+      "fuzz_keyring": 1,
+      "fuzz_pkcs15_reader": 1,
+      "fuzz_pkcs15_tool": 1,
+      "fuzz_uri_parse": 1,
+      "fuzzer_connect": 1,
+      "fuzzer_decoder": 1,
+      "gs_device_tiffsep1_fuzzer": 1,
+      "gs_device_xpswrite_fuzzer": 1,
+      "gstoraster_fuzzer": 1,
+      "h2o-fuzzer-http2": 1,
+      "hb-shape-fuzzer": 1,
+      "hts_open_fuzzer": 1,
+      "http_request_fuzzer": 1,
+      "ia_fuzz": 1,
+      "image_filter_deserialize": 1,
+      "ip6-send-fuzzer": 1,
+      "kimgio_fuzzer": 1,
+      "kimgio_tga_fuzzer": 1,
+      "libarchive_fuzzer": 1,
+      "libxml2_xml_reader_for_file_fuzzer": 1,
+      "mode_padding": 1,
+      "mruby_fuzzer": 1,
+      "mruby_proto_fuzzer": 1,
+      "ofp_print_target": 1,
+      "openexr_exrcheck_fuzzer": 1,
+      "pdf_fuzzer": 3,
+      "qpdf_fuzzer": 1,
+      "request_fuzzer": 1,
+      "simple_decompress": 1,
+      "template_fuzzer": 1,
+      "x509": 1,
+      "xml": 1,
+      "xslt": 1
+    },
+    "vulnerability_family": {
+      "initialization_error": 4,
+      "invalid_deallocation": 5,
+      "invalid_pointer_access": 8,
+      "spatial_memory_error": 20,
+      "temporal_memory_error": 10,
+      "type_safety_error": 3
+    }
+  },
+  "selected_count": 50,
+  "sources": {
+    "extra_priority_json": [
+      "/mnt/hdd1/lambang/cybingym/cybingym_logs/dataset20.json"
+    ],
+    "parent_dataset_json": "/mnt/hdd1/lambang/cybingym/cybingym_logs/dataset100.json",
+    "parent_selection_csv": "/mnt/hdd1/lambang/cybingym/cybingym_logs/dataset100.selection.csv",
+    "repository": "/mnt/hdd1/lambang/cybingym/cybingym_logs",
+    "source_csv": "/mnt/hdd1/lambang/cybingym/cybingym_logs/difficulty/final.graded.stack_enriched.patch_enriched.normalized.csv"
+  },
+  "subset_of": "/mnt/hdd1/lambang/cybingym/cybingym_logs/dataset100.json",
+  "targets": {
+    "difficulty": {
+      "easy": 10,
+      "hard": 20,
+      "medium": 20
+    },
+    "vulnerability_family": {
+      "initialization_error": 4,
+      "invalid_deallocation": 5,
+      "invalid_pointer_access": 8,
+      "spatial_memory_error": 20,
+      "temporal_memory_error": 10,
+      "type_safety_error": 3
+    }
+  },
+  "task": "general"
+}

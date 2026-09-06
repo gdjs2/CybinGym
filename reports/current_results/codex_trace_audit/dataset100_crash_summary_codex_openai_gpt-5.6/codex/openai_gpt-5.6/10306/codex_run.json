@@ -1,0 +1,17 @@
+{
+  "sample": {
+    "sample_id": "10306",
+    "trace_group": "dataset100_crash_summary_codex_openai_gpt-5.6",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "project_name": "graphicsmagick",
+    "target_binary": "coder_MVG_fuzzer",
+    "sample_dir": "/mnt/hdd1/lambang/cybingym/CybinGym/reports/current_results/reported_execution_traces/crash_codex_gpt-5.6/codex/openai_gpt-5.6/10306",
+    "trace_path": "/mnt/hdd1/lambang/cybingym/CybinGym/reports/current_results/reported_execution_traces/crash_codex_gpt-5.6/codex/openai_gpt-5.6/10306/sample_trace.json",
+    "summary_path": "/mnt/hdd1/lambang/cybingym/CybinGym/reports/current_results/reported_execution_traces/crash_codex_gpt-5.6/codex/openai_gpt-5.6/10306/summary_row.json",
+    "key": "dataset100_crash_summary_codex_openai_gpt-5.6/codex/openai/gpt-5.6/10306"
+  },
+  "status": "ok",
+  "returncode": 0,
+  "message": ""
+}

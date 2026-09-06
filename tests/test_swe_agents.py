@@ -16,6 +16,25 @@ class SweAgentConfigurationTests(unittest.TestCase):
         self.assertEqual(validation_bridge.name, "cybingym_crash_validation")
         self.assertEqual(len(validation_bridge.tools), 1)
 
+    def test_bridged_bash_timeout_is_extended(self):
+        sentinel_default = object()
+        sentinel_target = object()
+        with patch.object(
+            swe_agents,
+            "bash",
+            side_effect=[sentinel_default, sentinel_target],
+        ) as bash_tool, patch.object(
+            swe_agents,
+            "tool_with",
+            side_effect=lambda tool, **kwargs: tool,
+        ):
+            swe_agents.swe_bridged_tools()
+
+        self.assertEqual(bash_tool.call_args_list[0].kwargs["timeout"], 600)
+        self.assertEqual(bash_tool.call_args_list[0].kwargs["sandbox"], "default")
+        self.assertEqual(bash_tool.call_args_list[1].kwargs["timeout"], 600)
+        self.assertEqual(bash_tool.call_args_list[1].kwargs["sandbox"], "target")
+
     def test_codex_configuration_preserves_model_alignment(self):
         sentinel = object()
         with patch.object(swe_agents, "codex_cli", return_value=sentinel) as agent:
@@ -26,6 +45,7 @@ class SweAgentConfigurationTests(unittest.TestCase):
         self.assertEqual(kwargs["model_config"], "gpt-5.6")
         self.assertEqual(kwargs["web_search"], "disabled")
         self.assertFalse(kwargs["goals"])
+        self.assertEqual(kwargs["version"], swe_agents.CODEX_CLI_VERSION)
         self.assert_shared_bridge(kwargs["bridged_tools"])
 
     def test_claude_code_uses_shared_bridge(self):
@@ -36,6 +56,7 @@ class SweAgentConfigurationTests(unittest.TestCase):
         self.assertIs(solvers[1], sentinel)
         kwargs = agent.call_args.kwargs
         self.assertEqual(kwargs["disallowed_tools"], ["Bash", "WebSearch"])
+        self.assertEqual(kwargs["version"], swe_agents.CLAUDE_CODE_VERSION)
         self.assert_shared_bridge(kwargs["bridged_tools"])
 
     def test_kimi_code_uses_shared_bridge_and_pinned_version(self):
@@ -54,6 +75,24 @@ class SweAgentConfigurationTests(unittest.TestCase):
             swe_agents._prompt_for_level("crash"),
             importlib.import_module("solvers.prompts").crash_prompt,
         )
+
+    def test_full_level_can_select_no_description_prompt(self):
+        prompts = importlib.import_module("solvers.prompts")
+        prompt = swe_agents._prompt_for_level(
+            "full",
+            include_vulnerability_description=False,
+        )
+
+        self.assertIs(prompt, prompts.exploit_prompt_no_vulnerability_description)
+        self.assertIn("No vulnerability description is provided", prompt)
+        self.assertNotIn("desc.txt", prompt)
+
+    def test_no_description_prompt_rejects_crash_level(self):
+        with self.assertRaisesRegex(ValueError, "evaluation_level='full'"):
+            swe_agents._prompt_for_level(
+                "crash",
+                include_vulnerability_description=False,
+            )
 
 
 class CrashValidationToolTests(unittest.IsolatedAsyncioTestCase):
@@ -122,10 +161,15 @@ class KimiSolverSelectionTests(unittest.TestCase):
                 opensage_base_port=20000,
                 opensage_port_stride=10,
                 evaluation_level="crash",
+                include_vulnerability_description=True,
             )
 
         self.assertIs(selected, sentinel)
-        solver.assert_called_once_with(version="0.29.0", evaluation_level="crash")
+        solver.assert_called_once_with(
+            version="0.29.0",
+            evaluation_level="crash",
+            include_vulnerability_description=True,
+        )
 
 
 class EvaluationLevelTests(unittest.TestCase):
@@ -133,6 +177,39 @@ class EvaluationLevelTests(unittest.TestCase):
         cybingym_module = importlib.import_module("cybingym")
         with self.assertRaisesRegex(ValueError, "supported only"):
             cybingym_module.cybingym(agent_type="basic", evaluation_level="crash")
+
+    def test_no_description_rejects_non_cli_agents_before_dataset_load(self):
+        cybingym_module = importlib.import_module("cybingym")
+        with self.assertRaisesRegex(ValueError, "CLI agent types"):
+            cybingym_module.cybingym(
+                agent_type="basic",
+                include_vulnerability_description=False,
+            )
+
+    def test_no_description_rejects_crash_level(self):
+        cybingym_module = importlib.import_module("cybingym")
+        with self.assertRaisesRegex(ValueError, "evaluation_level='full'"):
+            cybingym_module.cybingym(
+                agent_type="codex",
+                evaluation_level="crash",
+                include_vulnerability_description=False,
+            )
+
+    def test_no_description_file_filter_omits_desc_txt(self):
+        cybingym_module = importlib.import_module("cybingym")
+
+        filtered = cybingym_module._sample_files_for_vulnerability_description(
+            {"desc.txt": "data/1/desc.txt", "notes.txt": "data/1/notes.txt"},
+            include_vulnerability_description=False,
+        )
+
+        self.assertEqual(filtered, {"notes.txt": "data/1/notes.txt"})
+        self.assertIsNone(
+            cybingym_module._sample_files_for_vulnerability_description(
+                {"desc.txt": "data/1/desc.txt"},
+                include_vulnerability_description=False,
+            )
+        )
 
     def test_crash_sample_omits_victim_service(self):
         cybingym_module = importlib.import_module("cybingym")
@@ -142,7 +219,7 @@ class EvaluationLevelTests(unittest.TestCase):
             evaluation_level="crash",
         )
         services = sample.sandbox.config.services
-        self.assertEqual(set(services), {"default", "target"})
+        self.assertEqual(set(services), {"default", "target", "proxy"})
 
     def test_full_sample_includes_victim_service(self):
         cybingym_module = importlib.import_module("cybingym")

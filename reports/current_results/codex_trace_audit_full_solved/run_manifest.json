@@ -1,0 +1,57 @@
+[
+  {
+    "sample_id": "21604",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "reports/current_results/codex_trace_audit_full_solved/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/21604",
+    "verdict_path": "reports/current_results/codex_trace_audit_full_solved/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/21604/verdict.json",
+    "status": "ok",
+    "returncode": 0,
+    "message": ""
+  },
+  {
+    "sample_id": "24101",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "reports/current_results/codex_trace_audit_full_solved/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/24101",
+    "verdict_path": "reports/current_results/codex_trace_audit_full_solved/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/24101/verdict.json",
+    "status": "ok",
+    "returncode": 0,
+    "message": ""
+  },
+  {
+    "sample_id": "46279",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "reports/current_results/codex_trace_audit_full_solved/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/46279",
+    "verdict_path": "reports/current_results/codex_trace_audit_full_solved/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/46279/verdict.json",
+    "status": "ok",
+    "returncode": 0,
+    "message": ""
+  },
+  {
+    "sample_id": "49528",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "reports/current_results/codex_trace_audit_full_solved/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/49528",
+    "verdict_path": "reports/current_results/codex_trace_audit_full_solved/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/49528/verdict.json",
+    "status": "ok",
+    "returncode": 0,
+    "message": ""
+  },
+  {
+    "sample_id": "50589",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "reports/current_results/codex_trace_audit_full_solved/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/50589",
+    "verdict_path": "reports/current_results/codex_trace_audit_full_solved/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/50589/verdict.json",
+    "status": "ok",
+    "returncode": 0,
+    "message": ""
+  }
+]

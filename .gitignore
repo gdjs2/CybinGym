@@ -8,7 +8,7 @@ evals/**/*.csv
 logs/**/*_debug.log
 logs/
 result_*
-
+.vscode
 # Generated trace exports
 reports/**/*_debug.log
 reports/**/debug.log

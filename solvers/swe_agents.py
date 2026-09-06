@@ -5,7 +5,11 @@ import tempfile
 from typing import Any
 
 from scorer import run_docker_validation
-from solvers.prompts import crash_prompt, exploit_prompt
+from solvers.prompts import (
+    crash_prompt,
+    exploit_prompt,
+    exploit_prompt_no_vulnerability_description,
+)
 
 from inspect_ai.tool import Tool, bash, tool, tool_with
 from inspect_ai.agent import Agent, BridgedToolsSpec
@@ -17,6 +21,9 @@ from inspect_swe import claude_code, codex_cli, kimi_code
 VALID_EVALUATION_LEVELS = {"crash", "full"}
 CRASH_VALIDATION_STORE_KEY = "cybingym_crash_validation"
 CRASH_VALIDATION_OUTPUT_LIMIT = 65536
+CLAUDE_CODE_VERSION = "2.1.220"
+CODEX_CLI_VERSION = "0.147.0"
+SWE_BASH_TIMEOUT = 600
 
 
 def _normalize_evaluation_level(evaluation_level: str) -> str:
@@ -151,12 +158,12 @@ def swe_bridged_tools() -> list[BridgedToolsSpec]:
             name="bash_tools_for_target_and_defaults",
             tools=[
                 tool_with(
-                    bash(timeout=120, sandbox="default"),
+                    bash(timeout=SWE_BASH_TIMEOUT, sandbox="default"),
                     name="default",
                     description="Bash environment of the default docker image. ",
                 ),
                 tool_with(
-                    bash(timeout=120, sandbox="target"),
+                    bash(timeout=SWE_BASH_TIMEOUT, sandbox="target"),
                     name="target",
                     description="Bash environment of the target docker image. ",
                 ),
@@ -169,32 +176,64 @@ def swe_bridged_tools() -> list[BridgedToolsSpec]:
     ]
 
 
-def _prompt_for_level(evaluation_level: str) -> str:
-    return (
-        crash_prompt
-        if _normalize_evaluation_level(evaluation_level) == "crash"
-        else exploit_prompt
-    )
+def _prompt_for_level(
+    evaluation_level: str,
+    *,
+    include_vulnerability_description: bool = True,
+) -> str:
+    normalized = _normalize_evaluation_level(evaluation_level)
+    if normalized == "crash":
+        if not include_vulnerability_description:
+            raise ValueError(
+                "include_vulnerability_description=False is supported only "
+                "for evaluation_level='full'"
+            )
+        return crash_prompt
+    if include_vulnerability_description:
+        return exploit_prompt
+    return exploit_prompt_no_vulnerability_description
 
 
-def claude_code_solver(evaluation_level: str = "full") -> list[Solver | Agent]:
+def claude_code_solver(
+    evaluation_level: str = "full",
+    *,
+    include_vulnerability_description: bool = True,
+) -> list[Solver | Agent]:
     return [
-        configure_cli_evaluation(_prompt_for_level(evaluation_level), evaluation_level),
+        configure_cli_evaluation(
+            _prompt_for_level(
+                evaluation_level,
+                include_vulnerability_description=include_vulnerability_description,
+            ),
+            evaluation_level,
+        ),
         claude_code(
             disallowed_tools=["Bash", "WebSearch"],
             bridged_tools=swe_bridged_tools(),
+            version=CLAUDE_CODE_VERSION,
         ),
     ]
 
 
-def codex_cli_solver(evaluation_level: str = "full") -> list[Solver | Agent]:
+def codex_cli_solver(
+    evaluation_level: str = "full",
+    *,
+    include_vulnerability_description: bool = True,
+) -> list[Solver | Agent]:
     return [
-        configure_cli_evaluation(_prompt_for_level(evaluation_level), evaluation_level),
+        configure_cli_evaluation(
+            _prompt_for_level(
+                evaluation_level,
+                include_vulnerability_description=include_vulnerability_description,
+            ),
+            evaluation_level,
+        ),
         codex_cli(
             model_config="gpt-5.6",
             web_search="disabled",
             goals=False,
             bridged_tools=swe_bridged_tools(),
+            version=CODEX_CLI_VERSION,
         ),
     ]
 
@@ -202,9 +241,17 @@ def codex_cli_solver(evaluation_level: str = "full") -> list[Solver | Agent]:
 def kimi_code_solver(
     version: str = "0.29.0",
     evaluation_level: str = "full",
+    *,
+    include_vulnerability_description: bool = True,
 ) -> list[Solver | Agent]:
     return [
-        configure_cli_evaluation(_prompt_for_level(evaluation_level), evaluation_level),
+        configure_cli_evaluation(
+            _prompt_for_level(
+                evaluation_level,
+                include_vulnerability_description=include_vulnerability_description,
+            ),
+            evaluation_level,
+        ),
         kimi_code(
             bridged_tools=swe_bridged_tools(),
             disallowed_tools=["WebSearch", "FetchURL"],
