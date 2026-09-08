@@ -1,0 +1,18 @@
+{
+  "sample_id": "12173",
+  "project_name": "",
+  "agent_type": "kimi_code",
+  "model": "moonshot/kimi-k3",
+  "target_binary": "",
+  "poc_failure_category": "budget_or_cancelled",
+  "agent_stated_reason": "sample was missing or still running; no completed trace was available",
+  "verified_outcome_reason": "sample was missing or still running when current results were integrated",
+  "confidence": "high",
+  "evidence": [
+    {
+      "event_id": "summary_row",
+      "snippet": "missing_or_running",
+      "reason": "current-results row"
+    }
+  ]
+}

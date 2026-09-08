@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sample_id",
+    "project_name",
+    "agent_type",
+    "model",
+    "target_binary",
+    "poc_failure_category",
+    "agent_stated_reason",
+    "verified_outcome_reason",
+    "confidence",
+    "evidence"
+  ],
+  "properties": {
+    "sample_id": {
+      "type": "string"
+    },
+    "project_name": {
+      "type": "string"
+    },
+    "agent_type": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "target_binary": {
+      "type": "string"
+    },
+    "poc_failure_category": {
+      "type": "string",
+      "enum": [
+        "could_not_trigger_crash",
+        "non_differential_crash",
+        "wrong_vulnerability_or_path",
+        "exploit_only_failed",
+        "tool_or_environment_failure",
+        "budget_or_cancelled",
+        "policy_refusal_or_filter",
+        "agent_gave_up_uncertain",
+        "contradictory_or_unreliable_claim",
+        "insufficient_evidence"
+      ]
+    },
+    "agent_stated_reason": {
+      "type": "string"
+    },
+    "verified_outcome_reason": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "event_id",
+          "snippet",
+          "reason"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string"
+          },
+          "snippet": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

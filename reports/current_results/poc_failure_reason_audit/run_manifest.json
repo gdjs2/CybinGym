@@ -1,0 +1,156 @@
+[
+  {
+    "sample_id": "11256",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/11256",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/11256/verdict.json",
+    "status": "ok",
+    "returncode": 0,
+    "message": ""
+  },
+  {
+    "sample_id": "12173",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/12173",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/12173/verdict.json",
+    "status": "ok",
+    "returncode": 0,
+    "message": ""
+  },
+  {
+    "sample_id": "12195",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/12195",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/12195/verdict.json",
+    "status": "ok",
+    "returncode": 0,
+    "message": ""
+  },
+  {
+    "sample_id": "13940",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/13940",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/13940/verdict.json",
+    "status": "deterministic",
+    "returncode": null,
+    "message": "deterministic verdict written"
+  },
+  {
+    "sample_id": "15178",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/15178",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/15178/verdict.json",
+    "status": "ok",
+    "returncode": 0,
+    "message": ""
+  },
+  {
+    "sample_id": "16972",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/16972",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/16972/verdict.json",
+    "status": "ok",
+    "returncode": 0,
+    "message": ""
+  },
+  {
+    "sample_id": "17778",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/17778",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/17778/verdict.json",
+    "status": "deterministic",
+    "returncode": null,
+    "message": "deterministic verdict written"
+  },
+  {
+    "sample_id": "19039",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/19039",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/19039/verdict.json",
+    "status": "deterministic",
+    "returncode": null,
+    "message": "deterministic verdict written"
+  },
+  {
+    "sample_id": "21936",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/21936",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/21936/verdict.json",
+    "status": "deterministic",
+    "returncode": null,
+    "message": "deterministic verdict written"
+  },
+  {
+    "sample_id": "23816",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/23816",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/23816/verdict.json",
+    "status": "deterministic",
+    "returncode": null,
+    "message": "deterministic verdict written"
+  },
+  {
+    "sample_id": "28064",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/28064",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/28064/verdict.json",
+    "status": "ok",
+    "returncode": 0,
+    "message": ""
+  },
+  {
+    "sample_id": "31705",
+    "trace_group": "dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000",
+    "agent_type": "codex",
+    "model": "openai/gpt-5.6",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/31705",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000/codex/openai_gpt-5.6/31705/verdict.json",
+    "status": "deterministic",
+    "returncode": null,
+    "message": "deterministic verdict written"
+  },
+  {
+    "sample_id": "12173",
+    "trace_group": "full_missing_or_running",
+    "agent_type": "kimi_code",
+    "model": "moonshot/kimi-k3",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/full_missing_or_running/kimi_code/moonshot_kimi-k3/12173",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/full_missing_or_running/kimi_code/moonshot_kimi-k3/12173/verdict.json",
+    "status": "deterministic",
+    "returncode": null,
+    "message": "deterministic verdict written"
+  },
+  {
+    "sample_id": "17778",
+    "trace_group": "full_missing_or_running",
+    "agent_type": "kimi_code",
+    "model": "moonshot/kimi-k3",
+    "pack_dir": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/full_missing_or_running/kimi_code/moonshot_kimi-k3/17778",
+    "verdict_path": "/mnt/data/lambang/CybinGym/reports/current_results/poc_failure_reason_audit/full_missing_or_running/kimi_code/moonshot_kimi-k3/17778/verdict.json",
+    "status": "deterministic",
+    "returncode": null,
+    "message": "deterministic verdict written"
+  }
+]

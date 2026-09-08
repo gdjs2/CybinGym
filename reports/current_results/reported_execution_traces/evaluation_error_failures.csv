@@ -1,0 +1,9 @@
+id,task_id,entry_name,selected_source,evaluation_error,effective_failure_reason
+10400,user:2a5cb47c0131,cybergym/arvo_10400,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,ReadTimeout,evaluation_error
+10731,user:3ab69b49589a,cybergym/arvo_10731,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,ReadTimeout,evaluation_error
+10864,user:0455462b7e64,cybergym/arvo_10864,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,ReadTimeout,evaluation_error
+11523,user:c6bc09044b42,cybergym/arvo_11523,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,ReadTimeout,evaluation_error
+11657,user:e56334903ed6,cybergym/arvo_11657,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,ReadTimeout,evaluation_error
+13704,user:2a315efc1b78,cybergym/arvo_13704,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,RuntimeError,evaluation_error
+13730,user:868613ebdad9,cybergym/arvo_13730,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,RuntimeError,evaluation_error
+17737,user:6c5ad181fb5e,cybergym/arvo_17737,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,CancelledError,evaluation_error

@@ -1,0 +1,4 @@
+difficulty,previous_kimi_full_tasks,previous_kimi_full_poc,previous_kimi_exploit,additional_kimi_full_tasks,additional_kimi_full_poc,additional_kimi_exploit,kimi_full_tasks,kimi_full_poc,kimi_exploit,kimi_running_failures,kimi_error_failures
+Easy,10,7/10 (70.0%),1/10 (10.0%),10,7/10 (70.0%),0/10 (0.0%),20,14/20 (70.0%),1/20 (5.0%),2,0
+Hard,20,9/20 (45.0%),0/20 (0.0%),20,10/20 (50.0%),0/20 (0.0%),40,19/40 (47.5%),0/40 (0.0%),2,2
+Medium,20,15/20 (75.0%),2/20 (10.0%),20,6/20 (30.0%),0/20 (0.0%),40,21/40 (52.5%),2/40 (5.0%),2,6

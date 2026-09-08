@@ -1,5 +1,5 @@
-task_type,agent,llm,tasks,completed_or_scored_rows,poc_success,poc_rate,exploit_success,exploit_rate,exploit_per_poc,raw_poc_success,raw_exploit_success,llm_call_limit,llm_call_failures,missing_or_running_failures,avg_cost_usd_scored_rows,total_cost_usd_scored_rows,avg_total_time_seconds_scored_rows,median_total_time_seconds_scored_rows,p90_total_time_seconds_scored_rows,avg_working_time_seconds_scored_rows,max_llm_calls
-crash,OpenAI Codex,GPT-5.6,100,100,84,84/100 (84.0%),0,,,84,0,,0,0,7.461779,746.177876,2106.027,1262.696,4381.163,2014.145,501
-crash,Kimi Code,kimi-k3,100,100,66,66/100 (66.0%),0,,,66,0,,0,0,12.904302,1290.430178,13760.872,8856.846,29835.272,11309.542,507
-full,OpenAI Codex,GPT-5.6,50,50,38,38/50 (76.0%),9,9/50 (18.0%),9/38 (23.7%),42,9,1000,5,0,30.602808,1530.140384,6786.011,3038.258,17015.792,6608.493,1237
-full,Kimi Code,kimi-k3,50,44,31,31/50 (62.0%),3,3/50 (6.0%),3/31 (9.7%),34,3,1000,5,6,42.612350,1874.943403,17498.540,8571.379,37586.430,16691.736,2421
+task_type,agent,llm,tasks,completed_or_scored_rows,poc_success,poc_rate,exploit_success,exploit_rate,exploit_per_poc,raw_poc_success,raw_exploit_success,llm_call_limit,llm_call_failures,missing_or_running_failures,avg_cost_usd_scored_rows,total_cost_usd_scored_rows,avg_total_time_seconds_scored_rows,median_total_time_seconds_scored_rows,p90_total_time_seconds_scored_rows,avg_working_time_seconds_scored_rows,max_llm_calls,evaluation_error_failures
+crash,OpenAI Codex,GPT-5.6,100,100,84,84/100 (84.0%),0,,,84,0,,0,0,7.461779,746.177876,2106.027,1262.696,4381.163,2014.145,501,0
+crash,Kimi Code,kimi-k3,100,100,66,66/100 (66.0%),0,,,66,0,,0,0,12.904302,1290.430178,13760.872,8856.846,29835.272,11309.542,507,0
+full,OpenAI Codex,GPT-5.6,50,50,38,38/50 (76.0%),9,9/50 (18.0%),9/38 (23.7%),42,9,1000,5,0,30.602808,1530.140384,6786.011,3038.258,17015.792,6608.493,1237,0
+full,Kimi Code,kimi-k3,100,86,54,54/100 (54.0%),3,3/100 (3.0%),3/54 (5.6%),60,3,1000,16,6,44.531135,3829.677578,20366.667,12207.475,50792.742,19650.282,2421,8
