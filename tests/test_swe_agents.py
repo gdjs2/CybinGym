@@ -103,6 +103,7 @@ class CrashValidationToolTests(unittest.IsolatedAsyncioTestCase):
             def get(self, key):
                 assert key == expected_store_key
                 return {
+                    swe_agents.VALIDATION_MEMORY_KEY: 123456789,
                     "valid_image_vul": "vul-img",
                     "valid_image_fix": "fix-img",
                     "target_binary": "bin/target",
@@ -114,7 +115,9 @@ class CrashValidationToolTests(unittest.IsolatedAsyncioTestCase):
                 assert text is False
                 return b"poc-bytes"
 
-        def fake_validation(image, target_binary, poc_path):
+        def fake_validation(image, target_binary, poc_path, timeout, memory_limit):
+            self.assertEqual(timeout, 60)
+            self.assertEqual(memory_limit, 123456789)
             self.assertEqual(target_binary, "bin/target")
             with open(poc_path, "rb") as handle:
                 self.assertEqual(handle.read(), b"poc-bytes")

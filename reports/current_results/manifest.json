@@ -8,7 +8,13 @@
     "kimi_dataset50_full_adjusted_baseline": "reports/current_results/dataset50_full_exploit_summary_kimi_code_moonshot_kimi-k3_llmcall1000_missingfailed.csv",
     "kimi_additional_full_eval_log": "logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval",
     "dataset100_metadata": "dataset.d/dataset100.selection.csv",
-    "kimi_price_config": "reports/kimi-k3_price_config.json"
+    "kimi_price_config": "reports/kimi-k3_price_config.json",
+    "codex_dataset50_full_adjusted_baseline": "reports/current_results/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000.csv",
+    "codex_dataset100_minus_dataset50_full_current_eval": "reports/current_results/dataset100_minus_dataset50_full_exploit_summary_codex_openai_gpt-5.6_current_eval.csv",
+    "kimi_dataset100_full_adjusted": "reports/current_results/dataset100_full_exploit_summary_kimi_code_moonshot_kimi-k3_llmcall1000_missingfailed.csv",
+    "overall_eval_source_paths": [
+      "reports/current_results/reported_execution_traces/full_source_logs"
+    ]
   },
   "outputs": {
     "codex_dataset50_full_adjusted": "reports/current_results/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000.csv",
@@ -36,10 +42,12 @@
     "cost_and_time_averages_for_missing_or_running_rows": "not imputed; averages use scored rows with recorded values; evaluation-error rows are excluded",
     "kimi_full_evaluation_errors_counted_as_failure": true,
     "full_evaluation_tasks_by_agent": {
-      "OpenAI Codex": 50,
+      "OpenAI Codex": 100,
       "Kimi Code": 100
     },
-    "completed_or_scored_rows_definition": "Rows with recorded scorer results; evaluation errors and missing/running rows excluded"
+    "completed_or_scored_rows_definition": "Rows with recorded scorer results; evaluation errors and missing/running rows excluded",
+    "overall_result_token_aggregates": "Computed from scored rows with recorded values. total_input_tokens uses the CSV total_input_tokens field when present; otherwise it uses input_tokens + input_tokens_cache_write + input_tokens_cache_read.",
+    "overall_full100_source_preference": "Full-exploitation rows prefer usable Inspect .eval archives. Sample IDs declared by full .eval dataset metadata but absent from that archive's summaries are materialized as failed eval rows before CSV fallback. Rows without usable local .eval coverage fall back to the existing per-sample CSV summaries."
   },
   "summary": [
     {
@@ -65,7 +73,14 @@
       "p90_total_time_seconds_scored_rows": "4381.163",
       "avg_working_time_seconds_scored_rows": "2014.145",
       "max_llm_calls": "501",
-      "evaluation_error_failures": "0"
+      "evaluation_error_failures": "0",
+      "total_time_seconds_scored_rows": "210602.655",
+      "total_working_time_seconds_scored_rows": "201414.508",
+      "total_tokens_scored_rows": "958633936",
+      "avg_total_tokens_scored_rows": "9586339.36",
+      "total_input_tokens_scored_rows": "953530155",
+      "total_output_tokens_scored_rows": "5103781",
+      "total_cache_read_tokens_scored_rows": "927685850"
     },
     {
       "task_type": "crash",
@@ -90,57 +105,78 @@
       "p90_total_time_seconds_scored_rows": "29835.272",
       "avg_working_time_seconds_scored_rows": "11309.542",
       "max_llm_calls": "507",
-      "evaluation_error_failures": "0"
+      "evaluation_error_failures": "0",
+      "total_time_seconds_scored_rows": "1376087.181",
+      "total_working_time_seconds_scored_rows": "1130954.226",
+      "total_tokens_scored_rows": "3297283028",
+      "avg_total_tokens_scored_rows": "32972830.28",
+      "total_input_tokens_scored_rows": "3286036250",
+      "total_output_tokens_scored_rows": "11246778",
+      "total_cache_read_tokens_scored_rows": "3235696384"
     },
     {
       "task_type": "full",
       "agent": "OpenAI Codex",
       "llm": "GPT-5.6",
-      "tasks": "50",
-      "completed_or_scored_rows": "50",
-      "poc_success": "38",
-      "poc_rate": "38/50 (76.0%)",
-      "exploit_success": "9",
-      "exploit_rate": "9/50 (18.0%)",
-      "exploit_per_poc": "9/38 (23.7%)",
-      "raw_poc_success": "42",
-      "raw_exploit_success": "9",
+      "tasks": "100",
+      "completed_or_scored_rows": "93",
+      "poc_success": "70",
+      "poc_rate": "70/100 (70.0%)",
+      "exploit_success": "16",
+      "exploit_rate": "16/100 (16.0%)",
+      "exploit_per_poc": "16/70 (22.9%)",
+      "raw_poc_success": "75",
+      "raw_exploit_success": "16",
       "llm_call_limit": "1000",
-      "llm_call_failures": "5",
+      "llm_call_failures": "8",
       "missing_or_running_failures": "0",
-      "avg_cost_usd_scored_rows": "30.602808",
-      "total_cost_usd_scored_rows": "1530.140384",
-      "avg_total_time_seconds_scored_rows": "6786.011",
-      "median_total_time_seconds_scored_rows": "3038.258",
-      "p90_total_time_seconds_scored_rows": "17015.792",
-      "avg_working_time_seconds_scored_rows": "6608.493",
+      "avg_cost_usd_scored_rows": "26.065318",
+      "total_cost_usd_scored_rows": "2424.074567",
+      "avg_total_time_seconds_scored_rows": "6475.162",
+      "median_total_time_seconds_scored_rows": "3271.326",
+      "p90_total_time_seconds_scored_rows": "16992.797",
+      "avg_working_time_seconds_scored_rows": "6300.800",
       "max_llm_calls": "1237",
-      "evaluation_error_failures": "0"
+      "evaluation_error_failures": "7",
+      "total_time_seconds_scored_rows": "602190.108",
+      "total_working_time_seconds_scored_rows": "585974.355",
+      "total_tokens_scored_rows": "3075143875",
+      "avg_total_tokens_scored_rows": "33066063.17",
+      "total_input_tokens_scored_rows": "3059810701",
+      "total_output_tokens_scored_rows": "15333174",
+      "total_cache_read_tokens_scored_rows": "2963327592"
     },
     {
       "task_type": "full",
       "agent": "Kimi Code",
       "llm": "kimi-k3",
       "tasks": "100",
-      "completed_or_scored_rows": "86",
+      "completed_or_scored_rows": "89",
       "poc_success": "54",
       "poc_rate": "54/100 (54.0%)",
       "exploit_success": "3",
       "exploit_rate": "3/100 (3.0%)",
       "exploit_per_poc": "3/54 (5.6%)",
-      "raw_poc_success": "60",
+      "raw_poc_success": "61",
       "raw_exploit_success": "3",
       "llm_call_limit": "1000",
-      "llm_call_failures": "16",
-      "missing_or_running_failures": "6",
-      "avg_cost_usd_scored_rows": "44.531135",
-      "total_cost_usd_scored_rows": "3829.677578",
-      "avg_total_time_seconds_scored_rows": "20366.667",
-      "median_total_time_seconds_scored_rows": "12207.475",
-      "p90_total_time_seconds_scored_rows": "50792.742",
-      "avg_working_time_seconds_scored_rows": "19650.282",
+      "llm_call_failures": "18",
+      "missing_or_running_failures": "2",
+      "avg_cost_usd_scored_rows": "45.940963",
+      "total_cost_usd_scored_rows": "4088.745692",
+      "avg_total_time_seconds_scored_rows": "20577.344",
+      "median_total_time_seconds_scored_rows": "12874.802",
+      "p90_total_time_seconds_scored_rows": "49071.943",
+      "avg_working_time_seconds_scored_rows": "20103.358",
       "max_llm_calls": "2421",
-      "evaluation_error_failures": "8"
+      "evaluation_error_failures": "9",
+      "total_time_seconds_scored_rows": "1831383.635",
+      "total_working_time_seconds_scored_rows": "1789198.873",
+      "total_tokens_scored_rows": "11923383803",
+      "avg_total_tokens_scored_rows": "133970604.53",
+      "total_input_tokens_scored_rows": "11900815378",
+      "total_output_tokens_scored_rows": "22568425",
+      "total_cache_read_tokens_scored_rows": "11834158080"
     }
   ],
   "integration": {
@@ -170,6 +206,198 @@
       "manifest": "reports/current_results/reported_execution_traces/full_kimi_kimi-k3/manifest.json",
       "exported_rows": 94,
       "evaluation_error_rows": "reports/current_results/reported_execution_traces/evaluation_error_failures.csv"
+    }
+  },
+  "overall_full100_integration": {
+    "script": "scripts/integrate_full100_overall_results.py",
+    "source_csvs": {
+      "crash:OpenAI Codex": [
+        "reports/current_results/dataset100_crash_summary_codex_openai_gpt-5.6.csv"
+      ],
+      "crash:Kimi Code": [
+        "reports/current_results/dataset100_crash_summary_kimi_code_moonshot_kimi-k3.csv"
+      ],
+      "full:OpenAI Codex": [
+        "reports/current_results/dataset50_full_exploit_summary_codex_openai_gpt-5.6_llmcall1000.csv",
+        "reports/current_results/dataset100_minus_dataset50_full_exploit_summary_codex_openai_gpt-5.6_current_eval.csv"
+      ],
+      "full:Kimi Code": [
+        "reports/current_results/dataset100_full_exploit_summary_kimi_code_moonshot_kimi-k3_llmcall1000_missingfailed.csv"
+      ]
+    },
+    "log_path_audit": {
+      "requested_path": "reports/current_results/reported_executiontraces/full_source_logs",
+      "requested_path_exists": false,
+      "actual_source_log_path": "reports/current_results/reported_execution_traces/full_source_logs",
+      "actual_source_log_path_exists": true,
+      "actual_source_eval_files": 10,
+      "actual_source_lfs_pointer_eval_files": 0,
+      "local_log_eval_files": 7,
+      "codex_full_trace_sample_dirs": 50,
+      "kimi_full_trace_sample_dirs": 94
+    },
+    "eval_loader": {
+      "reported_source_paths": [
+        "reports/current_results/reported_execution_traces/full_source_logs/0a7de435eac4__2026-08-29T06-26-18-00-00_cybingym_7gWNPJBP4V96AHFRsH2xXh.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/2026-09-07T16-25-15-00-00_cybingym_MPj2qp6BV59pRLtywNm9x4.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/3a0c9cdc01be__2026-08-30T03-28-13-00-00_cybingym_ggq36hrvv2DtLvSLKNPCTc.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/3d8126b81fb8__2026-08-17T23-30-47-00-00_cybingym_C6y9hCvA59u2DeBJ3TNZG2.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/471bb4e96d0b__2026-08-09T09-23-00-00-00_cybingym_jgk6GaYqiGRZyLo6QvSwRx.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/732907f44ef1__2026-08-06T08-01-41-00-00_cybingym20_UmbsZtfJsgwPv55FYjn3rM.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/9569292b900b__2026-08-29T15-37-55-00-00_cybingym_RvBPham8bqy4bhnSqbHcSP.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/b40b8504e4fe__2026-08-09T10-17-50-00-00_cybingym_btefGvS6ZievvJLgd48345.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval"
+      ],
+      "source_paths": [
+        "reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/2026-09-07T16-25-15-00-00_cybingym_MPj2qp6BV59pRLtywNm9x4.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/3a0c9cdc01be__2026-08-30T03-28-13-00-00_cybingym_ggq36hrvv2DtLvSLKNPCTc.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/3d8126b81fb8__2026-08-17T23-30-47-00-00_cybingym_C6y9hCvA59u2DeBJ3TNZG2.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/471bb4e96d0b__2026-08-09T09-23-00-00-00_cybingym_jgk6GaYqiGRZyLo6QvSwRx.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/732907f44ef1__2026-08-06T08-01-41-00-00_cybingym20_UmbsZtfJsgwPv55FYjn3rM.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/b40b8504e4fe__2026-08-09T10-17-50-00-00_cybingym_btefGvS6ZievvJLgd48345.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval"
+      ],
+      "lfs_pointer_source_paths": [],
+      "lfs_object_source_paths": [],
+      "lfs_pointer_source_paths_without_objects": [],
+      "local_fallback_source_paths": [],
+      "skipped_non_full_source_paths": [
+        "reports/current_results/reported_execution_traces/full_source_logs/0a7de435eac4__2026-08-29T06-26-18-00-00_cybingym_7gWNPJBP4V96AHFRsH2xXh.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/9569292b900b__2026-08-29T15-37-55-00-00_cybingym_RvBPham8bqy4bhnSqbHcSP.eval"
+      ],
+      "sources_seen": 8,
+      "sources_loaded": 8,
+      "sources_skipped_as_duplicate_runs": 0,
+      "source_errors": [],
+      "rows_seen": 209,
+      "rows_in_metadata": 209,
+      "duplicate_rows_replaced": 7,
+      "declared_missing_rows_added": [
+        {
+          "agent": "Kimi Code",
+          "id": "10574",
+          "source": "reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval",
+          "reason": "declared_in_eval_missing_summary"
+        },
+        {
+          "agent": "Kimi Code",
+          "id": "17778",
+          "source": "reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval",
+          "reason": "declared_in_eval_missing_summary"
+        }
+      ],
+      "declared_missing_rows_added_by_agent": {
+        "OpenAI Codex": 0,
+        "Kimi Code": 2
+      },
+      "eval_rows_by_agent": {
+        "OpenAI Codex": 100,
+        "Kimi Code": 100
+      }
+    },
+    "row_sources": {
+      "crash:OpenAI Codex": {
+        "eval_rows": 0,
+        "csv_rows": 100
+      },
+      "crash:Kimi Code": {
+        "eval_rows": 0,
+        "csv_rows": 100
+      },
+      "full:OpenAI Codex": {
+        "eval_rows": 100,
+        "csv_rows": 0
+      },
+      "full:Kimi Code": {
+        "eval_rows": 100,
+        "csv_rows": 0
+      }
+    },
+    "selected_source_counts": {
+      "crash:OpenAI Codex": {
+        "reports/current_results/dataset100_crash_summary_codex_openai_gpt-5.6.csv": 100
+      },
+      "crash:Kimi Code": {
+        "reports/current_results/dataset100_crash_summary_kimi_code_moonshot_kimi-k3.csv": 100
+      },
+      "full:OpenAI Codex": {
+        "reports/current_results/reported_execution_traces/full_source_logs/2026-09-07T16-25-15-00-00_cybingym_MPj2qp6BV59pRLtywNm9x4.eval": 50,
+        "reports/current_results/reported_execution_traces/full_source_logs/3a0c9cdc01be__2026-08-30T03-28-13-00-00_cybingym_ggq36hrvv2DtLvSLKNPCTc.eval": 30,
+        "reports/current_results/reported_execution_traces/full_source_logs/471bb4e96d0b__2026-08-09T09-23-00-00-00_cybingym_jgk6GaYqiGRZyLo6QvSwRx.eval": 1,
+        "reports/current_results/reported_execution_traces/full_source_logs/732907f44ef1__2026-08-06T08-01-41-00-00_cybingym20_UmbsZtfJsgwPv55FYjn3rM.eval": 17,
+        "reports/current_results/reported_execution_traces/full_source_logs/b40b8504e4fe__2026-08-09T10-17-50-00-00_cybingym_btefGvS6ZievvJLgd48345.eval": 2
+      },
+      "full:Kimi Code": {
+        "reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval": 30,
+        "reports/current_results/reported_execution_traces/full_source_logs/3d8126b81fb8__2026-08-17T23-30-47-00-00_cybingym_C6y9hCvA59u2DeBJ3TNZG2.eval": 20,
+        "reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval": 50
+      }
+    },
+    "codex_full100": {
+      "task_type": "full",
+      "agent": "OpenAI Codex",
+      "llm": "GPT-5.6",
+      "tasks": "100",
+      "completed_or_scored_rows": "93",
+      "poc_success": "70",
+      "poc_rate": "70/100 (70.0%)",
+      "exploit_success": "16",
+      "exploit_rate": "16/100 (16.0%)",
+      "exploit_per_poc": "16/70 (22.9%)",
+      "raw_poc_success": "75",
+      "raw_exploit_success": "16",
+      "llm_call_limit": "1000",
+      "llm_call_failures": "8",
+      "missing_or_running_failures": "0",
+      "avg_cost_usd_scored_rows": "26.065318",
+      "total_cost_usd_scored_rows": "2424.074567",
+      "avg_total_time_seconds_scored_rows": "6475.162",
+      "median_total_time_seconds_scored_rows": "3271.326",
+      "p90_total_time_seconds_scored_rows": "16992.797",
+      "avg_working_time_seconds_scored_rows": "6300.800",
+      "max_llm_calls": "1237",
+      "evaluation_error_failures": "7",
+      "total_time_seconds_scored_rows": "602190.108",
+      "total_working_time_seconds_scored_rows": "585974.355",
+      "total_tokens_scored_rows": "3075143875",
+      "avg_total_tokens_scored_rows": "33066063.17",
+      "total_input_tokens_scored_rows": "3059810701",
+      "total_output_tokens_scored_rows": "15333174",
+      "total_cache_read_tokens_scored_rows": "2963327592"
+    },
+    "kimi_full100": {
+      "task_type": "full",
+      "agent": "Kimi Code",
+      "llm": "kimi-k3",
+      "tasks": "100",
+      "completed_or_scored_rows": "89",
+      "poc_success": "54",
+      "poc_rate": "54/100 (54.0%)",
+      "exploit_success": "3",
+      "exploit_rate": "3/100 (3.0%)",
+      "exploit_per_poc": "3/54 (5.6%)",
+      "raw_poc_success": "61",
+      "raw_exploit_success": "3",
+      "llm_call_limit": "1000",
+      "llm_call_failures": "18",
+      "missing_or_running_failures": "2",
+      "avg_cost_usd_scored_rows": "45.940963",
+      "total_cost_usd_scored_rows": "4088.745692",
+      "avg_total_time_seconds_scored_rows": "20577.344",
+      "median_total_time_seconds_scored_rows": "12874.802",
+      "p90_total_time_seconds_scored_rows": "49071.943",
+      "avg_working_time_seconds_scored_rows": "20103.358",
+      "max_llm_calls": "2421",
+      "evaluation_error_failures": "9",
+      "total_time_seconds_scored_rows": "1831383.635",
+      "total_working_time_seconds_scored_rows": "1789198.873",
+      "total_tokens_scored_rows": "11923383803",
+      "avg_total_tokens_scored_rows": "133970604.53",
+      "total_input_tokens_scored_rows": "11900815378",
+      "total_output_tokens_scored_rows": "22568425",
+      "total_cache_read_tokens_scored_rows": "11834158080"
     }
   }
 }

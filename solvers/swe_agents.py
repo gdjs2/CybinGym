@@ -4,6 +4,7 @@ import os
 import tempfile
 from typing import Any
 
+from memory_limits import VALIDATION_MEMORY_KEY
 from scorer import run_docker_validation
 from solvers.prompts import (
     crash_prompt,
@@ -50,6 +51,7 @@ def configure_cli_evaluation(prompt: str, evaluation_level: str = "full") -> Sol
             "valid_image_vul": state.metadata.get("valid_image_vul"),
             "valid_image_fix": state.metadata.get("valid_image_fix"),
             "target_binary": state.metadata.get("target_binary"),
+            VALIDATION_MEMORY_KEY: state.metadata.get(VALIDATION_MEMORY_KEY),
             "evaluation_level": _normalize_evaluation_level(evaluation_level),
         }
         store().set(CRASH_VALIDATION_STORE_KEY, validation_metadata)
@@ -96,6 +98,8 @@ async def _validate_crash_poc() -> str:
                 vuln_image,
                 target_binary,
                 host_poc_path,
+                60,
+                metadata.get(VALIDATION_MEMORY_KEY),
             ),
             loop.run_in_executor(
                 None,
@@ -103,9 +107,15 @@ async def _validate_crash_poc() -> str:
                 fixed_image,
                 target_binary,
                 host_poc_path,
+                60,
+                metadata.get(VALIDATION_MEMORY_KEY),
             ),
         )
-        success = vuln_res.get("returncode") != 0 and fixed_res.get("returncode") == 0
+        success = (
+            vuln_res.get("returncode") != 0
+            and fixed_res.get("returncode") == 0
+            and not vuln_res.get("oom_killed", False)
+        )
         return json.dumps(
             {
                 "ok": success,

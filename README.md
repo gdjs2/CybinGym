@@ -94,6 +94,42 @@ The Kimi Code binary defaults to the pinned version `0.29.0`. Override it with
 `-T kimi_code_version=<version>` when intentionally testing another release.
 Use `inspect trace dump --filter "Kimi Code"` to inspect agent debug traces.
 
+## Sample memory budget
+
+Standard Inspect samples default to a **4096 MiB (4 GiB)** container memory
+budget. On a 125 GiB host, 25 concurrent samples have a combined ceiling of
+100 GiB, leaving about 25 GiB for Inspect, Docker, builds, and other host work.
+
+```bash
+uv run inspect eval cybingym.py \
+  -T agent_type=codex \
+  -T sample_memory_mb=4096 \
+  --max-samples 25 \
+  --model openai/gpt-5.6
+```
+
+The budget is divided into independent hard Docker limits:
+
+| Container | Default limit |
+| --- | ---: |
+| Agent / analysis (`default`) | 2048 MiB |
+| Dynamic analysis (`target`) | 512 MiB |
+| Victim service | 384 MiB |
+| HTTP proxy | 128 MiB |
+| Crash validation, each of two containers | 512 MiB |
+
+Allocations scale proportionally with `sample_memory_mb` (integer MiB, minimum
+1024). Unused allocations are not borrowed by other containers. Crash-only runs
+omit the victim allocation. Swap is disabled for these containers. A workload
+that exceeds its container's limit can still fail that sample, but cannot consume
+unbounded host RAM. Validation OOM kills do not count as successful crash proofs.
+Builds and host processes are outside this budget; it is not a shared sample cgroup.
+The validation allocation reserves one vulnerable/fixed pair per sample.
+
+This setting covers standard Inspect sandboxes and crash validation. OpenSAGE
+manages its own analysis containers; explicitly passing `sample_memory_mb` with
+`agent_type=opensage` is rejected rather than claiming to limit those containers.
+
 ## OpenSAGE / SageAgent Run
 
 Run the OpenSAGE handoff solver on the default smoke set:

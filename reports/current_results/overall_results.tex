@@ -1,15 +1,17 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Current expanded CybinGym results. Crash-only evaluation uses 100 binaries per agent. Full exploitation uses 50 binaries for Codex and 100 for Kimi; these are different evaluation sets. Full-evaluation runs with more than 1000 LLM calls are counted as failures. Kimi's six previously missing or running samples and eight additional-batch evaluation errors are also counted as failures.}
+\caption{Current CybinGym results with full exploitation expanded to 100 samples for both Codex and Kimi Code. Full-evaluation runs with more than 1000 LLM calls are counted as failures where row-level call counts are available. Evaluation errors and missing or running samples also count as failures. Cost, time, and token aggregates use scored rows with recorded values.}
 \label{tab:current-expanded-results}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{lrrrrrrrrrr}
+\begin{tabular}{lllrrrrrrrrrrr}
 \hline
-Agent & LLM & \# Crash & PoC@100 & \# Full & Full PoC & Exploit & Exploit/PoC & LLM-call Fail & Missing Fail & Error Fail \\
+Task & Agent & LLM & \# Tasks & \# Scored & PoC & Exploit & Exploit/PoC & Total Cost & Total Time (s) & Total Tokens & LLM Fail & Missing Fail & Error Fail \\
 \hline
-OpenAI Codex & GPT-5.6 & 100 & 84/100 (84.0\%) & 50 & 38/50 (76.0\%) & 9/50 (18.0\%) & 9/38 (23.7\%) & 5 & 0 & 0 \\
-Kimi Code & kimi-k3 & 100 & 66/100 (66.0\%) & 100 & 54/100 (54.0\%) & 3/100 (3.0\%) & 3/54 (5.6\%) & 16 & 6 & 8 \\
+crash & OpenAI Codex & GPT-5.6 & 100 & 100 & 84/100 (84.0\%) &  &  & 746.177876 & 210602.655 & 958633936 & 0 & 0 & 0 \\
+crash & Kimi Code & kimi-k3 & 100 & 100 & 66/100 (66.0\%) &  &  & 1290.430178 & 1376087.181 & 3297283028 & 0 & 0 & 0 \\
+full & OpenAI Codex & GPT-5.6 & 100 & 93 & 70/100 (70.0\%) & 16/100 (16.0\%) & 16/70 (22.9\%) & 2424.074567 & 602190.108 & 3075143875 & 8 & 0 & 7 \\
+full & Kimi Code & kimi-k3 & 100 & 89 & 54/100 (54.0\%) & 3/100 (3.0\%) & 3/54 (5.6\%) & 4088.745692 & 1831383.635 & 11923383803 & 18 & 2 & 9 \\
 \hline
 \end{tabular}%
 }

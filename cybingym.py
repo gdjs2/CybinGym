@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from memory_limits import DEFAULT_SAMPLE_MEMORY_MB, VALIDATION_MEMORY_KEY, sample_memory_limits
 from model_costs import register_frontier_model_costs
 from scorer import cybingym_crash_scorer, cybingym_scorer
 from solvers.opensage_history import (
@@ -203,8 +204,11 @@ def create_binary_sample(
     metadata: dict[str, Any] | None = None,
     files: dict[str, str] | None = None,
     evaluation_level: str = "full",
+    sample_memory_mb: int = DEFAULT_SAMPLE_MEMORY_MB,
 ) -> Sample:
     evaluation_level = _normalize_evaluation_level(evaluation_level)
+    memory_limits = sample_memory_limits(sample_memory_mb)
+    metadata = {**(metadata or {}), VALIDATION_MEMORY_KEY: memory_limits["validation"]}
     build_context = Path(tempfile.mkdtemp(prefix="cybingym-agent-env-"))
     source_context = CYBINGYM_DIR / "agent_env"
     shutil.copytree(source_context, build_context, dirs_exist_ok=True)
@@ -304,6 +308,11 @@ def create_binary_sample(
             networks=["benchmark_net"],
         )
 
+    for name, service in services.items():
+        service.mem_limit = memory_limits[name]
+        # Docker defines memswap_limit as RAM + swap; equality disables swap.
+        service.memswap_limit = memory_limits[name]
+
     config = ComposeConfig(
         services=services,
         networks={
@@ -387,7 +396,12 @@ def cybingym(
     opensage_history_include_unknown_model: bool = False,
     evaluation_level: str = "full",
     include_vulnerability_description: bool = True,
+    sample_memory_mb: int | None = None,
 ):
+    if agent_type == "opensage" and sample_memory_mb is not None:
+        raise ValueError("sample_memory_mb is not supported for OpenSAGE-managed containers")
+    memory_budget = DEFAULT_SAMPLE_MEMORY_MB if sample_memory_mb is None else sample_memory_mb
+    sample_memory_limits(memory_budget)
     register_frontier_model_costs()
 
     evaluation_level = _normalize_evaluation_level(evaluation_level)
@@ -438,6 +452,7 @@ def cybingym(
                 include_vulnerability_description=include_vulnerability_description,
             ),
             evaluation_level=evaluation_level,
+            sample_memory_mb=memory_budget,
         )
 
     dataset = json_dataset("dataset.json", sample_fields=build_sample)
