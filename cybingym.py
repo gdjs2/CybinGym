@@ -28,6 +28,7 @@ from inspect_ai.util import (
     ComposeService,
     SandboxEnvironmentSpec,
 )
+from pydantic import ValidationError
 
 MAXIMUM_ATTEMPTS = 1
 EVALUATION_LEVELS = {"crash", "full"}
@@ -40,6 +41,56 @@ DEFAULT_OPENSAGE_SOURCE_DIR = os.environ.get(
     "OPENSAGE_SOURCE_DIR",
     str(CYBINGYM_DIR.parent / "opensage-adk-dev"),
 )
+
+
+def _coerce_legacy_compose_mem_limits(config: dict[str, Any]) -> dict[str, Any]:
+    services = config.get("services")
+    if not isinstance(services, dict):
+        return config
+
+    updated_services: dict[str, Any] | None = None
+    for name, service in services.items():
+        if not isinstance(service, dict):
+            continue
+        mem_limit = service.get("mem_limit")
+        if isinstance(mem_limit, int) and not isinstance(mem_limit, bool):
+            if updated_services is None:
+                updated_services = dict(services)
+            updated_service = dict(service)
+            updated_service["mem_limit"] = str(mem_limit)
+            updated_services[name] = updated_service
+
+    if updated_services is None:
+        return config
+
+    updated_config = dict(config)
+    updated_config["services"] = updated_services
+    return updated_config
+
+
+def _install_legacy_inspect_docker_config_deserializer() -> None:
+    from inspect_ai.util._sandbox.docker.docker import DockerSandboxEnvironment
+
+    if "config_deserialize" in DockerSandboxEnvironment.__dict__:
+        return
+
+    original_config_deserialize = DockerSandboxEnvironment.config_deserialize
+
+    def config_deserialize(
+        _cls: type[DockerSandboxEnvironment], config: dict[str, Any]
+    ) -> ComposeConfig:
+        try:
+            return ComposeConfig.model_validate(
+                _coerce_legacy_compose_mem_limits(config)
+            )
+        except ValidationError:
+            return original_config_deserialize(config)
+
+    DockerSandboxEnvironment.config_deserialize = classmethod(config_deserialize)
+
+
+_install_legacy_inspect_docker_config_deserializer()
+
 
 def _default_opensage_python() -> str:
     configured = os.environ.get("OPENSAGE_PYTHON")
@@ -88,6 +139,28 @@ def _sample_files_for_vulnerability_description(
         return files
     filtered = {name: path for name, path in files.items() if name != "desc.txt"}
     return filtered or None
+
+
+def _analysis_image_for_patched_binary(
+    record: dict[str, Any],
+    *,
+    include_patched_binary: bool,
+) -> str:
+    metadata = record.get("metadata") or {}
+    analysis_image = metadata.get("analysis_image")
+
+    if include_patched_binary:
+        if not analysis_image:
+            raise ValueError("Dataset record is missing metadata.analysis_image")
+        return analysis_image
+
+    sample_id = _clean_str(record.get("id"))
+    if not sample_id:
+        raise ValueError(
+            "include_patched_binary=False requires a dataset record id "
+            "to derive the vulnerable-only analysis image"
+        )
+    return f"lambangaw/cybingym:{sample_id}-vul"
 
 
 def _infer_provider(model_name: str) -> str:
@@ -141,6 +214,7 @@ def _select_solver(
     opensage_port_stride: int,
     evaluation_level: str,
     include_vulnerability_description: bool,
+    include_patched_binary: bool,
 ):
     if agent_type == "openai":
         from solvers.openai_agent import openai_agent
@@ -152,6 +226,7 @@ def _select_solver(
         return claude_code_solver(
             evaluation_level=evaluation_level,
             include_vulnerability_description=include_vulnerability_description,
+            include_patched_binary=include_patched_binary,
         )
     if agent_type == "codex":
         from solvers.swe_agents import codex_cli_solver
@@ -159,6 +234,7 @@ def _select_solver(
         return codex_cli_solver(
             evaluation_level=evaluation_level,
             include_vulnerability_description=include_vulnerability_description,
+            include_patched_binary=include_patched_binary,
         )
     if agent_type == "kimi_code":
         from solvers.swe_agents import kimi_code_solver
@@ -167,6 +243,7 @@ def _select_solver(
             version=kimi_code_version,
             evaluation_level=evaluation_level,
             include_vulnerability_description=include_vulnerability_description,
+            include_patched_binary=include_patched_binary,
         )
     if agent_type == "opensage":
         from solvers.opensage_agent import opensage_solver
@@ -204,6 +281,7 @@ def create_binary_sample(
     metadata: dict[str, Any] | None = None,
     files: dict[str, str] | None = None,
     evaluation_level: str = "full",
+    include_patched_binary: bool = True,
     sample_memory_mb: int = DEFAULT_SAMPLE_MEMORY_MB,
 ) -> Sample:
     evaluation_level = _normalize_evaluation_level(evaluation_level)
@@ -214,17 +292,24 @@ def create_binary_sample(
     shutil.copytree(source_context, build_context, dirs_exist_ok=True)
 
     dockerfile_default = build_context / "Dockerfile.default"
-    dockerfile_default.write_text(
-        dockerfile_default.read_text().replace(
-            "COPY --from=${TARGET_BASE_IMAGE} /out-vul /out-vul",
-            f"COPY --from={prebuilt_base_image} /out-vul /out-vul",
-            1,
-        ).replace(
+    dockerfile_default_text = dockerfile_default.read_text().replace(
+        "COPY --from=${TARGET_BASE_IMAGE} /out-vul /out-vul",
+        f"COPY --from={prebuilt_base_image} /out-vul /out-vul",
+        1,
+    )
+    if include_patched_binary:
+        dockerfile_default_text = dockerfile_default_text.replace(
             "COPY --from=${TARGET_BASE_IMAGE} /out-fix /out-fix",
             f"COPY --from={prebuilt_base_image} /out-fix /out-fix",
             1,
         )
-    )
+    else:
+        dockerfile_default_text = dockerfile_default_text.replace(
+            "COPY --from=${TARGET_BASE_IMAGE} /out-fix /out-fix\n",
+            "",
+            1,
+        )
+    dockerfile_default.write_text(dockerfile_default_text)
     dockerfile_target = build_context / "Dockerfile.target"
     dockerfile_target.write_text(
         dockerfile_target.read_text().replace(
@@ -309,9 +394,11 @@ def create_binary_sample(
         )
 
     for name, service in services.items():
-        service.mem_limit = memory_limits[name]
+        limit = str(memory_limits[name])
+        # Inspect log deserialization requires compose mem_limit values as strings.
+        service.mem_limit = limit
         # Docker defines memswap_limit as RAM + swap; equality disables swap.
-        service.memswap_limit = memory_limits[name]
+        service.memswap_limit = limit
 
     config = ComposeConfig(
         services=services,
@@ -396,7 +483,9 @@ def cybingym(
     opensage_history_include_unknown_model: bool = False,
     evaluation_level: str = "full",
     include_vulnerability_description: bool = True,
+    include_patched_binary: bool = True,
     sample_memory_mb: int | None = None,
+    poc_artifact_dir: str = "",
 ):
     if agent_type == "opensage" and sample_memory_mb is not None:
         raise ValueError("sample_memory_mb is not supported for OpenSAGE-managed containers")
@@ -422,15 +511,25 @@ def cybingym(
                 f"only for CLI agent types {sorted(CLI_AGENT_TYPES)}; "
                 f"got {agent_type!r}"
             )
+    if not include_patched_binary:
+        if evaluation_level != "full":
+            raise ValueError(
+                "include_patched_binary=False is currently supported "
+                "only for evaluation_level='full'"
+            )
+        if agent_type not in CLI_AGENT_TYPES:
+            raise ValueError(
+                "include_patched_binary=False is currently supported "
+                f"only for CLI agent types {sorted(CLI_AGENT_TYPES)}; "
+                f"got {agent_type!r}"
+            )
 
     def build_sample(record: dict[str, Any]) -> Sample:
         metadata = record.get("metadata") or {}
-        analysis_image = metadata.get("analysis_image")
-
-        if not analysis_image:
-            raise ValueError(
-                "Dataset record is missing metadata.analysis_image"
-            )
+        analysis_image = _analysis_image_for_patched_binary(
+            record,
+            include_patched_binary=include_patched_binary,
+        )
 
         if agent_type == "opensage":
             return create_poc_handoff_sample(
@@ -452,6 +551,7 @@ def cybingym(
                 include_vulnerability_description=include_vulnerability_description,
             ),
             evaluation_level=evaluation_level,
+            include_patched_binary=include_patched_binary,
             sample_memory_mb=memory_budget,
         )
 
@@ -583,8 +683,11 @@ def cybingym(
             opensage_port_stride=opensage_port_stride,
             evaluation_level=evaluation_level,
             include_vulnerability_description=include_vulnerability_description,
+            include_patched_binary=include_patched_binary,
         ),
-        scorer=cybingym_crash_scorer() if evaluation_level == "crash" else cybingym_scorer(
+        scorer=cybingym_crash_scorer(
+            poc_artifact_dir=poc_artifact_dir,
+        ) if evaluation_level == "crash" else cybingym_scorer(
             opensage_model=history_model or opensage_model,
             opensage_provider=history_provider or opensage_provider,
             opensage_history_summary_path=opensage_history_summary_path,
@@ -600,6 +703,7 @@ def cybingym(
             opensage_history_model=history_model,
             opensage_history_provider=history_provider,
             opensage_history_include_unknown_model=opensage_history_include_unknown_model,
+            poc_artifact_dir=poc_artifact_dir,
         ),
         metadata=task_metadata or None,
         fail_on_error=False,

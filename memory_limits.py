@@ -1,6 +1,6 @@
 """Fixed container allocations whose sum stays within a sample's RAM budget."""
 
-DEFAULT_SAMPLE_MEMORY_MB = 4096
+DEFAULT_SAMPLE_MEMORY_MB = 6144
 VALIDATION_MEMORY_KEY = "cybingym_validation_memory_bytes"
 
 

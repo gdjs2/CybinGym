@@ -1,9 +1,17 @@
-id,task_id,entry_name,selected_source,evaluation_error,effective_failure_reason
-10400,user:2a5cb47c0131,cybergym/arvo_10400,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,ReadTimeout,evaluation_error
-10731,user:3ab69b49589a,cybergym/arvo_10731,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,ReadTimeout,evaluation_error
-10864,user:0455462b7e64,cybergym/arvo_10864,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,ReadTimeout,evaluation_error
-11523,user:c6bc09044b42,cybergym/arvo_11523,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,ReadTimeout,evaluation_error
-11657,user:e56334903ed6,cybergym/arvo_11657,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,ReadTimeout,evaluation_error
-13704,user:2a315efc1b78,cybergym/arvo_13704,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,RuntimeError,evaluation_error
-13730,user:868613ebdad9,cybergym/arvo_13730,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,RuntimeError,evaluation_error
-17737,user:6c5ad181fb5e,cybergym/arvo_17737,logs/2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,CancelledError,evaluation_error
+task_type,agent,id,task_id,entry_name,selected_source,sample_status,evaluation_error,effective_failure_reason
+full,OpenAI Codex,10055,user:4e5e1c4b1c25,cybergym/arvo_10055,reports/current_results/reported_execution_traces/full_source_logs/2026-09-07T16-25-15-00-00_cybingym_MPj2qp6BV59pRLtywNm9x4.eval,error,RuntimeError,evaluation_error
+full,OpenAI Codex,10400,user:2a5cb47c0131,cybergym/arvo_10400,reports/current_results/reported_execution_traces/full_source_logs/2026-09-07T16-25-15-00-00_cybingym_MPj2qp6BV59pRLtywNm9x4.eval,error,RuntimeError,evaluation_error
+full,OpenAI Codex,24925,user:b8c7e8975ed2,cybergym/arvo_24925,reports/current_results/reported_execution_traces/full_source_logs/2026-09-07T16-25-15-00-00_cybingym_MPj2qp6BV59pRLtywNm9x4.eval,error,RuntimeError,evaluation_error
+full,OpenAI Codex,28750,user:53111a9af21f,cybergym/arvo_28750,reports/current_results/reported_execution_traces/full_source_logs/2026-09-07T16-25-15-00-00_cybingym_MPj2qp6BV59pRLtywNm9x4.eval,error,RuntimeError,evaluation_error
+full,OpenAI Codex,38080,user:72a50470fc55,cybergym/arvo_38080,reports/current_results/reported_execution_traces/full_source_logs/2026-09-07T16-25-15-00-00_cybingym_MPj2qp6BV59pRLtywNm9x4.eval,error,RuntimeError,evaluation_error
+full,OpenAI Codex,45320,user:c459a1f44b55,cybergym/arvo_45320,reports/current_results/reported_execution_traces/full_source_logs/2026-09-07T16-25-15-00-00_cybingym_MPj2qp6BV59pRLtywNm9x4.eval,error,RuntimeError,evaluation_error
+full,OpenAI Codex,46244,user:53b49cb46fdc,cybergym/arvo_46244,reports/current_results/reported_execution_traces/full_source_logs/2026-09-07T16-25-15-00-00_cybingym_MPj2qp6BV59pRLtywNm9x4.eval,error,RuntimeError,evaluation_error
+full,Kimi Code,10400,user:2a5cb47c0131,cybergym/arvo_10400,reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,error,ReadTimeout,evaluation_error
+full,Kimi Code,10731,user:3ab69b49589a,cybergym/arvo_10731,reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,error,ReadTimeout,evaluation_error
+full,Kimi Code,10864,user:0455462b7e64,cybergym/arvo_10864,reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,error,ReadTimeout,evaluation_error
+full,Kimi Code,11523,user:c6bc09044b42,cybergym/arvo_11523,reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,error,ReadTimeout,evaluation_error
+full,Kimi Code,11657,user:e56334903ed6,cybergym/arvo_11657,reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,error,ReadTimeout,evaluation_error
+full,Kimi Code,13704,user:2a315efc1b78,cybergym/arvo_13704,reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,error,RuntimeError,evaluation_error
+full,Kimi Code,13730,user:868613ebdad9,cybergym/arvo_13730,reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,error,RuntimeError,evaluation_error
+full,Kimi Code,17737,user:6c5ad181fb5e,cybergym/arvo_17737,reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval,error,CancelledError,evaluation_error
+full,Kimi Code,21936,user:724c1c1d8391,cybergym/arvo_21936,reports/current_results/reported_execution_traces/full_source_logs/3d8126b81fb8__2026-08-17T23-30-47-00-00_cybingym_C6y9hCvA59u2DeBJ3TNZG2.eval,error,RuntimeError,evaluation_error

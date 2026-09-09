@@ -1,0 +1,2 @@
+request: "GET / HTTP/1.1\r\nHost: a.url.com\r\nConnection: keep-alive\r\nKeep-Alive: 106446469464960\r\nX: \r\n\r\n"
+reply: "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"

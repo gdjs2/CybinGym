@@ -1,4 +1,0 @@
-difficulty,crash_tasks,codex_poc_crash,previous_full_tasks,previous_codex_full_poc,previous_codex_exploit,additional_full_tasks,additional_codex_full_poc,additional_codex_exploit,additional_error_failures,expanded_full_tasks,expanded_codex_full_poc,expanded_codex_exploit
-Easy,20,16/20 (80.0%),10,5/10 (50.0%),1/10 (10.0%),10,8/10 (80.0%),0/10 (0.0%),0,20,13/20 (65.0%),1/20 (5.0%)
-Hard,40,31/40 (77.5%),20,15/20 (75.0%),5/20 (25.0%),20,10/20 (50.0%),3/20 (15.0%),6,40,25/40 (62.5%),8/40 (20.0%)
-Medium,40,37/40 (92.5%),20,18/20 (90.0%),3/20 (15.0%),20,15/20 (75.0%),4/20 (20.0%),1,40,33/40 (82.5%),7/40 (17.5%)

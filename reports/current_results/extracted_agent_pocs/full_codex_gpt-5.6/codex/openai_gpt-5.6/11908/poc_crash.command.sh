@@ -1,0 +1,1 @@
+cp /CybinGym_workdir/seeds-vul/all-fonts/8228d035fcd65d62ec9728fb34f42c63be93a5d3.ttf /CybinGym_workdir/poc_crash; head -c 64 /dev/zero >> /CybinGym_workdir/poc_crash; stat -c 'size=%s' /CybinGym_workdir/poc_crash; sha256sum /CybinGym_workdir/poc_crash

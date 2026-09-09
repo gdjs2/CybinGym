@@ -28,11 +28,7 @@
     "difficulty_csv": "reports/current_results/difficulty_results.csv",
     "difficulty_tex": "reports/current_results/difficulty_results.tex",
     "kimi_additional_dataset50_full_raw": "reports/current_results/dataset50_additional_full_exploit_summary_kimi_code_moonshot_kimi-k3.csv",
-    "kimi_dataset100_full_adjusted": "reports/current_results/dataset100_full_exploit_summary_kimi_code_moonshot_kimi-k3_llmcall1000_missingfailed.csv",
-    "category_results_additional": "reports/current_results/category_results_additional.csv",
-    "difficulty_results_additional": "reports/current_results/difficulty_results_additional.csv",
-    "category_results_additional_tex": "reports/current_results/category_results_additional.tex",
-    "difficulty_results_additional_tex": "reports/current_results/difficulty_results_additional.tex"
+    "kimi_dataset100_full_adjusted": "reports/current_results/dataset100_full_exploit_summary_kimi_code_moonshot_kimi-k3_llmcall1000_missingfailed.csv"
   },
   "criteria": {
     "full_evaluation_llm_call_limit": 1000,
@@ -232,7 +228,7 @@
       "actual_source_log_path_exists": true,
       "actual_source_eval_files": 10,
       "actual_source_lfs_pointer_eval_files": 0,
-      "local_log_eval_files": 7,
+      "local_log_eval_files": 8,
       "codex_full_trace_sample_dirs": 50,
       "kimi_full_trace_sample_dirs": 94
     },
@@ -335,6 +331,206 @@
         "reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval": 50
       }
     },
+    "breakdown_outputs": {
+      "category_csv": "reports/current_results/category_results.csv",
+      "category_tex": "reports/current_results/category_results.tex",
+      "difficulty_csv": "reports/current_results/difficulty_results.csv",
+      "difficulty_tex": "reports/current_results/difficulty_results.tex",
+      "category_rows": [
+        {
+          "category": "Initialization Error",
+          "crash_tasks": "9",
+          "codex_poc_crash": "7/9 (77.8%)",
+          "kimi_poc_crash": "4/9 (44.4%)",
+          "codex_full_tasks": "9",
+          "codex_full_scored": "8",
+          "codex_full_poc": "3/9 (33.3%)",
+          "codex_exploit": "0/9 (0.0%)",
+          "codex_llm_failures": "0",
+          "codex_missing_failures": "0",
+          "codex_error_failures": "1",
+          "kimi_full_tasks": "9",
+          "kimi_full_scored": "8",
+          "kimi_full_poc": "2/9 (22.2%)",
+          "kimi_exploit": "0/9 (0.0%)",
+          "kimi_llm_failures": "1",
+          "kimi_missing_failures": "0",
+          "kimi_error_failures": "1"
+        },
+        {
+          "category": "Invalid Deallocation",
+          "crash_tasks": "10",
+          "codex_poc_crash": "8/10 (80.0%)",
+          "kimi_poc_crash": "7/10 (70.0%)",
+          "codex_full_tasks": "10",
+          "codex_full_scored": "10",
+          "codex_full_poc": "7/10 (70.0%)",
+          "codex_exploit": "0/10 (0.0%)",
+          "codex_llm_failures": "2",
+          "codex_missing_failures": "0",
+          "codex_error_failures": "0",
+          "kimi_full_tasks": "10",
+          "kimi_full_scored": "10",
+          "kimi_full_poc": "8/10 (80.0%)",
+          "kimi_exploit": "0/10 (0.0%)",
+          "kimi_llm_failures": "1",
+          "kimi_missing_failures": "0",
+          "kimi_error_failures": "0"
+        },
+        {
+          "category": "Invalid Pointer Access",
+          "crash_tasks": "15",
+          "codex_poc_crash": "12/15 (80.0%)",
+          "kimi_poc_crash": "10/15 (66.7%)",
+          "codex_full_tasks": "15",
+          "codex_full_scored": "14",
+          "codex_full_poc": "8/15 (53.3%)",
+          "codex_exploit": "4/15 (26.7%)",
+          "codex_llm_failures": "3",
+          "codex_missing_failures": "0",
+          "codex_error_failures": "1",
+          "kimi_full_tasks": "15",
+          "kimi_full_scored": "14",
+          "kimi_full_poc": "8/15 (53.3%)",
+          "kimi_exploit": "2/15 (13.3%)",
+          "kimi_llm_failures": "5",
+          "kimi_missing_failures": "1",
+          "kimi_error_failures": "0"
+        },
+        {
+          "category": "Spatial Memory Error",
+          "crash_tasks": "40",
+          "codex_poc_crash": "34/40 (85.0%)",
+          "kimi_poc_crash": "27/40 (67.5%)",
+          "codex_full_tasks": "40",
+          "codex_full_scored": "37",
+          "codex_full_poc": "30/40 (75.0%)",
+          "codex_exploit": "4/40 (10.0%)",
+          "codex_llm_failures": "2",
+          "codex_missing_failures": "0",
+          "codex_error_failures": "3",
+          "kimi_full_tasks": "40",
+          "kimi_full_scored": "35",
+          "kimi_full_poc": "23/40 (57.5%)",
+          "kimi_exploit": "1/40 (2.5%)",
+          "kimi_llm_failures": "5",
+          "kimi_missing_failures": "1",
+          "kimi_error_failures": "4"
+        },
+        {
+          "category": "Temporal Memory Error",
+          "crash_tasks": "20",
+          "codex_poc_crash": "17/20 (85.0%)",
+          "kimi_poc_crash": "13/20 (65.0%)",
+          "codex_full_tasks": "20",
+          "codex_full_scored": "19",
+          "codex_full_poc": "18/20 (90.0%)",
+          "codex_exploit": "8/20 (40.0%)",
+          "codex_llm_failures": "0",
+          "codex_missing_failures": "0",
+          "codex_error_failures": "1",
+          "kimi_full_tasks": "20",
+          "kimi_full_scored": "16",
+          "kimi_full_poc": "9/20 (45.0%)",
+          "kimi_exploit": "0/20 (0.0%)",
+          "kimi_llm_failures": "4",
+          "kimi_missing_failures": "0",
+          "kimi_error_failures": "4"
+        },
+        {
+          "category": "Type Safety Error",
+          "crash_tasks": "6",
+          "codex_poc_crash": "6/6 (100.0%)",
+          "kimi_poc_crash": "5/6 (83.3%)",
+          "codex_full_tasks": "6",
+          "codex_full_scored": "5",
+          "codex_full_poc": "4/6 (66.7%)",
+          "codex_exploit": "0/6 (0.0%)",
+          "codex_llm_failures": "1",
+          "codex_missing_failures": "0",
+          "codex_error_failures": "1",
+          "kimi_full_tasks": "6",
+          "kimi_full_scored": "6",
+          "kimi_full_poc": "4/6 (66.7%)",
+          "kimi_exploit": "0/6 (0.0%)",
+          "kimi_llm_failures": "2",
+          "kimi_missing_failures": "0",
+          "kimi_error_failures": "0"
+        }
+      ],
+      "difficulty_rows": [
+        {
+          "difficulty": "Easy",
+          "crash_tasks": "20",
+          "codex_poc_crash": "16/20 (80.0%)",
+          "kimi_poc_crash": "14/20 (70.0%)",
+          "codex_full_tasks": "20",
+          "codex_full_scored": "20",
+          "codex_full_poc": "12/20 (60.0%)",
+          "codex_exploit": "1/20 (5.0%)",
+          "codex_llm_failures": "3",
+          "codex_missing_failures": "0",
+          "codex_error_failures": "0",
+          "kimi_full_tasks": "20",
+          "kimi_full_scored": "19",
+          "kimi_full_poc": "14/20 (70.0%)",
+          "kimi_exploit": "1/20 (5.0%)",
+          "kimi_llm_failures": "4",
+          "kimi_missing_failures": "1",
+          "kimi_error_failures": "0"
+        },
+        {
+          "difficulty": "Medium",
+          "crash_tasks": "40",
+          "codex_poc_crash": "37/40 (92.5%)",
+          "kimi_poc_crash": "28/40 (70.0%)",
+          "codex_full_tasks": "40",
+          "codex_full_scored": "39",
+          "codex_full_poc": "33/40 (82.5%)",
+          "codex_exploit": "7/40 (17.5%)",
+          "codex_llm_failures": "4",
+          "codex_missing_failures": "0",
+          "codex_error_failures": "1",
+          "kimi_full_tasks": "40",
+          "kimi_full_scored": "33",
+          "kimi_full_poc": "21/40 (52.5%)",
+          "kimi_exploit": "2/40 (5.0%)",
+          "kimi_llm_failures": "7",
+          "kimi_missing_failures": "1",
+          "kimi_error_failures": "6"
+        },
+        {
+          "difficulty": "Hard",
+          "crash_tasks": "40",
+          "codex_poc_crash": "31/40 (77.5%)",
+          "kimi_poc_crash": "24/40 (60.0%)",
+          "codex_full_tasks": "40",
+          "codex_full_scored": "34",
+          "codex_full_poc": "25/40 (62.5%)",
+          "codex_exploit": "8/40 (20.0%)",
+          "codex_llm_failures": "1",
+          "codex_missing_failures": "0",
+          "codex_error_failures": "6",
+          "kimi_full_tasks": "40",
+          "kimi_full_scored": "37",
+          "kimi_full_poc": "19/40 (47.5%)",
+          "kimi_exploit": "0/40 (0.0%)",
+          "kimi_llm_failures": "7",
+          "kimi_missing_failures": "0",
+          "kimi_error_failures": "3"
+        }
+      ]
+    },
+    "removed_superseded_report_files": [
+      "reports/current_results/category_results_additional.csv",
+      "reports/current_results/category_results_additional.tex",
+      "reports/current_results/category_results_codex_full100.csv",
+      "reports/current_results/category_results_codex_full100.tex",
+      "reports/current_results/difficulty_results_additional.csv",
+      "reports/current_results/difficulty_results_additional.tex",
+      "reports/current_results/difficulty_results_codex_full100.csv",
+      "reports/current_results/difficulty_results_codex_full100.tex"
+    ],
     "codex_full100": {
       "task_type": "full",
       "agent": "OpenAI Codex",
@@ -399,5 +595,155 @@
       "total_output_tokens_scored_rows": "22568425",
       "total_cache_read_tokens_scored_rows": "11834158080"
     }
+  },
+  "reported_execution_trace_export": {
+    "script": "scripts/export_current_reported_traces.py",
+    "trace_root": "reports/current_results/reported_execution_traces",
+    "manifest_csv": "reports/current_results/reported_execution_traces/manifest.csv",
+    "manifest_json": "reports/current_results/reported_execution_traces/manifest.json",
+    "trace_export_failures_csv": "reports/current_results/reported_execution_traces/trace_export_failures.csv",
+    "missing_or_running_failures_csv": "reports/current_results/reported_execution_traces/missing_or_running_failures.csv",
+    "evaluation_error_failures_csv": "reports/current_results/reported_execution_traces/evaluation_error_failures.csv",
+    "groups": [
+      {
+        "trace_group": "crash_codex_gpt-5.6",
+        "task_type": "crash",
+        "agent": "OpenAI Codex",
+        "reported_rows": "100",
+        "exported_ok": "100",
+        "export_errors": "0",
+        "sample_trace_files": "100",
+        "reported_rows_csv": "reports/current_results/reported_execution_traces/crash_codex_gpt-5.6/reported_rows.csv",
+        "manifest_csv": "reports/current_results/reported_execution_traces/crash_codex_gpt-5.6/manifest.csv",
+        "manifest_json": "reports/current_results/reported_execution_traces/crash_codex_gpt-5.6/manifest.json",
+        "error_sample_ids": ""
+      },
+      {
+        "trace_group": "crash_kimi_kimi-k3",
+        "task_type": "crash",
+        "agent": "Kimi Code",
+        "reported_rows": "100",
+        "exported_ok": "100",
+        "export_errors": "0",
+        "sample_trace_files": "100",
+        "reported_rows_csv": "reports/current_results/reported_execution_traces/crash_kimi_kimi-k3/reported_rows.csv",
+        "manifest_csv": "reports/current_results/reported_execution_traces/crash_kimi_kimi-k3/manifest.csv",
+        "manifest_json": "reports/current_results/reported_execution_traces/crash_kimi_kimi-k3/manifest.json",
+        "error_sample_ids": ""
+      },
+      {
+        "trace_group": "full_codex_gpt-5.6",
+        "task_type": "full",
+        "agent": "OpenAI Codex",
+        "reported_rows": "100",
+        "exported_ok": "100",
+        "export_errors": "0",
+        "sample_trace_files": "100",
+        "reported_rows_csv": "reports/current_results/reported_execution_traces/full_codex_gpt-5.6/reported_rows.csv",
+        "manifest_csv": "reports/current_results/reported_execution_traces/full_codex_gpt-5.6/manifest.csv",
+        "manifest_json": "reports/current_results/reported_execution_traces/full_codex_gpt-5.6/manifest.json",
+        "error_sample_ids": ""
+      },
+      {
+        "trace_group": "full_kimi_kimi-k3",
+        "task_type": "full",
+        "agent": "Kimi Code",
+        "reported_rows": "100",
+        "exported_ok": "98",
+        "export_errors": "2",
+        "sample_trace_files": "98",
+        "reported_rows_csv": "reports/current_results/reported_execution_traces/full_kimi_kimi-k3/reported_rows.csv",
+        "manifest_csv": "reports/current_results/reported_execution_traces/full_kimi_kimi-k3/manifest.csv",
+        "manifest_json": "reports/current_results/reported_execution_traces/full_kimi_kimi-k3/manifest.json",
+        "error_sample_ids": "10574,17778"
+      }
+    ],
+    "total_reported_rows": 400,
+    "total_exported_ok": 398,
+    "total_export_errors": 2,
+    "total_sample_trace_files": 398,
+    "eval_loader": {
+      "reported_source_paths": [
+        "reports/current_results/reported_execution_traces/full_source_logs/0a7de435eac4__2026-08-29T06-26-18-00-00_cybingym_7gWNPJBP4V96AHFRsH2xXh.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/2026-09-07T16-25-15-00-00_cybingym_MPj2qp6BV59pRLtywNm9x4.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/3a0c9cdc01be__2026-08-30T03-28-13-00-00_cybingym_ggq36hrvv2DtLvSLKNPCTc.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/3d8126b81fb8__2026-08-17T23-30-47-00-00_cybingym_C6y9hCvA59u2DeBJ3TNZG2.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/471bb4e96d0b__2026-08-09T09-23-00-00-00_cybingym_jgk6GaYqiGRZyLo6QvSwRx.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/732907f44ef1__2026-08-06T08-01-41-00-00_cybingym20_UmbsZtfJsgwPv55FYjn3rM.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/9569292b900b__2026-08-29T15-37-55-00-00_cybingym_RvBPham8bqy4bhnSqbHcSP.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/b40b8504e4fe__2026-08-09T10-17-50-00-00_cybingym_btefGvS6ZievvJLgd48345.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval"
+      ],
+      "source_paths": [
+        "reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/2026-09-07T16-25-15-00-00_cybingym_MPj2qp6BV59pRLtywNm9x4.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/3a0c9cdc01be__2026-08-30T03-28-13-00-00_cybingym_ggq36hrvv2DtLvSLKNPCTc.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/3d8126b81fb8__2026-08-17T23-30-47-00-00_cybingym_C6y9hCvA59u2DeBJ3TNZG2.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/471bb4e96d0b__2026-08-09T09-23-00-00-00_cybingym_jgk6GaYqiGRZyLo6QvSwRx.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/732907f44ef1__2026-08-06T08-01-41-00-00_cybingym20_UmbsZtfJsgwPv55FYjn3rM.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/b40b8504e4fe__2026-08-09T10-17-50-00-00_cybingym_btefGvS6ZievvJLgd48345.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/c4cfccf89fa4__2026-09-05T13-59-40-00-00_cybingym_2Va28Bgv8TSAejScvjE2rG.eval"
+      ],
+      "lfs_pointer_source_paths": [],
+      "lfs_object_source_paths": [],
+      "lfs_pointer_source_paths_without_objects": [],
+      "local_fallback_source_paths": [],
+      "skipped_non_full_source_paths": [
+        "reports/current_results/reported_execution_traces/full_source_logs/0a7de435eac4__2026-08-29T06-26-18-00-00_cybingym_7gWNPJBP4V96AHFRsH2xXh.eval",
+        "reports/current_results/reported_execution_traces/full_source_logs/9569292b900b__2026-08-29T15-37-55-00-00_cybingym_RvBPham8bqy4bhnSqbHcSP.eval"
+      ],
+      "sources_seen": 8,
+      "sources_loaded": 8,
+      "sources_skipped_as_duplicate_runs": 0,
+      "source_errors": [],
+      "rows_seen": 209,
+      "rows_in_metadata": 209,
+      "duplicate_rows_replaced": 7,
+      "declared_missing_rows_added": [
+        {
+          "agent": "Kimi Code",
+          "id": "10574",
+          "source": "reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval",
+          "reason": "declared_in_eval_missing_summary"
+        },
+        {
+          "agent": "Kimi Code",
+          "id": "17778",
+          "source": "reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval",
+          "reason": "declared_in_eval_missing_summary"
+        }
+      ],
+      "declared_missing_rows_added_by_agent": {
+        "OpenAI Codex": 0,
+        "Kimi Code": 2
+      },
+      "eval_rows_by_agent": {
+        "OpenAI Codex": 100,
+        "Kimi Code": 100
+      }
+    },
+    "non_extractable_rows": [
+      {
+        "csv_path": "reports/current_results/reported_execution_traces/full_kimi_kimi-k3/reported_rows.csv",
+        "row_index": "6",
+        "sample_id": "10574",
+        "agent_type": "kimi_code",
+        "model": "moonshot/kimi-k3",
+        "selected_source": "reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval",
+        "output_dir": "reports/current_results/reported_execution_traces/full_kimi_kimi-k3/kimi_code/moonshot_kimi-k3/10574",
+        "message": "sample 10574 not found in /home/ubuntu/CybinGym/reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval"
+      },
+      {
+        "csv_path": "reports/current_results/reported_execution_traces/full_kimi_kimi-k3/reported_rows.csv",
+        "row_index": "49",
+        "sample_id": "17778",
+        "agent_type": "kimi_code",
+        "model": "moonshot/kimi-k3",
+        "selected_source": "reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval",
+        "output_dir": "reports/current_results/reported_execution_traces/full_kimi_kimi-k3/kimi_code/moonshot_kimi-k3/17778",
+        "message": "sample 17778 not found in /home/ubuntu/CybinGym/reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval"
+      }
+    ]
   }
 }

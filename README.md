@@ -57,6 +57,34 @@ uv run inspect eval cybingym.py -T agent_type=codex -T evaluation_level=crash --
 
 `evaluation_level=crash` is currently supported for the CLI-backed agents `claude_code`, `codex`, and `kimi_code`. Those agents receive a restricted `validate_crash_poc` tool that reads only `/CybinGym_workdir/poc_crash` and validates it against the benchmark's hidden vulnerable and fixed images. It does not expose shell access, Docker image names, arbitrary paths, source code, or a victim service.
 
+Persist CLI-agent PoC artifacts to the host with `poc_artifact_dir`. When enabled,
+the scorer copies `/CybinGym_workdir/poc_crash` and `/CybinGym_workdir/poc` from
+the default sandbox before cleanup, writes raw bytes unchanged, and stores metadata
+beside each file:
+
+```bash
+uv run inspect eval cybingym.py \
+  -T agent_type=codex \
+  -T evaluation_level=full \
+  -T poc_artifact_dir=reports/poc_artifacts/codex-full \
+  --model openai/gpt-5
+```
+
+The same output directory can be set with `CYBINGYM_POC_ARTIFACT_DIR`. Saved files
+are written under `<dir>/<model>/<sample-id>/<sample-uuid-or-epoch>/`.
+
+For full-evaluation ablation studies with CLI-backed agents, omit the
+vulnerability description, the patched binary, or both:
+
+```bash
+uv run inspect eval cybingym.py \
+  -T agent_type=codex \
+  -T evaluation_level=full \
+  -T include_vulnerability_description=false \
+  -T include_patched_binary=false \
+  --model openai/gpt-5
+```
+
 Run specific samples with Inspect's `--sample-id` selector. Use a comma-separated
 list for more than one sample:
 

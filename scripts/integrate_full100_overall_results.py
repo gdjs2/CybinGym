@@ -31,6 +31,10 @@ ROOT = Path("reports/current_results")
 DATASET100 = Path("dataset.d/dataset100.selection.csv")
 OVERALL_CSV = ROOT / "overall_results.csv"
 OVERALL_TEX = ROOT / "overall_results.tex"
+CATEGORY_CSV = ROOT / "category_results.csv"
+CATEGORY_TEX = ROOT / "category_results.tex"
+DIFFICULTY_CSV = ROOT / "difficulty_results.csv"
+DIFFICULTY_TEX = ROOT / "difficulty_results.tex"
 MANIFEST_JSON = ROOT / "manifest.json"
 KIMI_PRICE_CONFIG = Path("reports/kimi-k3_price_config.json")
 
@@ -68,6 +72,17 @@ AGGREGATE_COLUMNS = [
     "total_input_tokens_scored_rows",
     "total_output_tokens_scored_rows",
     "total_cache_read_tokens_scored_rows",
+]
+
+SUPERSEDED_REPORT_FILES = [
+    ROOT / "category_results_additional.csv",
+    ROOT / "category_results_additional.tex",
+    ROOT / "category_results_codex_full100.csv",
+    ROOT / "category_results_codex_full100.tex",
+    ROOT / "difficulty_results_additional.csv",
+    ROOT / "difficulty_results_additional.tex",
+    ROOT / "difficulty_results_codex_full100.csv",
+    ROOT / "difficulty_results_codex_full100.tex",
 ]
 
 
@@ -687,6 +702,197 @@ def update_summary_row(
     return row
 
 
+def group_label(row: dict[str, str], group_key: str) -> str:
+    return row[group_key].replace("_", " ").title()
+
+
+def ordered_group_labels(metadata_rows: list[dict[str, str]], group_key: str) -> list[str]:
+    labels = {group_label(row, group_key) for row in metadata_rows}
+    if group_key == "difficulty_label":
+        order = {"Easy": 0, "Medium": 1, "Hard": 2}
+        return sorted(labels, key=lambda label: (order.get(label, 99), label))
+    return sorted(labels)
+
+
+def breakdown_rate(rows: list[dict[str, str]], key: str) -> str:
+    return rate(count_true(rows, key), len(rows))
+
+
+def breakdown_failures(rows: list[dict[str, str]], key: str) -> str:
+    return str(count_true(rows, key))
+
+
+def breakdown_error_failures(rows: list[dict[str, str]]) -> str:
+    return str(sum(row.get("sample_status") == "error" for row in rows))
+
+
+def build_breakdown_rows(
+    label_key: str,
+    group_key: str,
+    metadata_rows: list[dict[str, str]],
+    source_rows_by_key: dict[tuple[str, str], list[dict[str, str]]],
+) -> list[dict[str, str]]:
+    output: list[dict[str, str]] = []
+    for label in ordered_group_labels(metadata_rows, group_key):
+        codex_crash = [
+            row for row in source_rows_by_key[("crash", "OpenAI Codex")]
+            if group_label(row, group_key) == label
+        ]
+        kimi_crash = [
+            row for row in source_rows_by_key[("crash", "Kimi Code")]
+            if group_label(row, group_key) == label
+        ]
+        codex_full = [
+            row for row in source_rows_by_key[("full", "OpenAI Codex")]
+            if group_label(row, group_key) == label
+        ]
+        kimi_full = [
+            row for row in source_rows_by_key[("full", "Kimi Code")]
+            if group_label(row, group_key) == label
+        ]
+        output.append(
+            {
+                label_key: label,
+                "crash_tasks": str(len(codex_crash)),
+                "codex_poc_crash": breakdown_rate(codex_crash, "poc"),
+                "kimi_poc_crash": breakdown_rate(kimi_crash, "poc"),
+                "codex_full_tasks": str(len(codex_full)),
+                "codex_full_scored": str(len(scored_rows("full", codex_full))),
+                "codex_full_poc": breakdown_rate(codex_full, "poc"),
+                "codex_exploit": breakdown_rate(codex_full, "exploit"),
+                "codex_llm_failures": breakdown_failures(codex_full, "llm_call_limit_exceeded"),
+                "codex_missing_failures": breakdown_failures(
+                    codex_full, "missing_or_running_counted_failed"
+                ),
+                "codex_error_failures": breakdown_error_failures(codex_full),
+                "kimi_full_tasks": str(len(kimi_full)),
+                "kimi_full_scored": str(len(scored_rows("full", kimi_full))),
+                "kimi_full_poc": breakdown_rate(kimi_full, "poc"),
+                "kimi_exploit": breakdown_rate(kimi_full, "exploit"),
+                "kimi_llm_failures": breakdown_failures(kimi_full, "llm_call_limit_exceeded"),
+                "kimi_missing_failures": breakdown_failures(
+                    kimi_full, "missing_or_running_counted_failed"
+                ),
+                "kimi_error_failures": breakdown_error_failures(kimi_full),
+            }
+        )
+    return output
+
+
+BREAKDOWN_FIELDNAMES = [
+    "crash_tasks",
+    "codex_poc_crash",
+    "kimi_poc_crash",
+    "codex_full_tasks",
+    "codex_full_scored",
+    "codex_full_poc",
+    "codex_exploit",
+    "codex_llm_failures",
+    "codex_missing_failures",
+    "codex_error_failures",
+    "kimi_full_tasks",
+    "kimi_full_scored",
+    "kimi_full_poc",
+    "kimi_exploit",
+    "kimi_llm_failures",
+    "kimi_missing_failures",
+    "kimi_error_failures",
+]
+
+
+def write_breakdown_csv(path: Path, label_key: str, rows: list[dict[str, str]]) -> None:
+    write_csv(path, [label_key, *BREAKDOWN_FIELDNAMES], rows)
+
+
+def write_breakdown_tex(
+    path: Path,
+    label_key: str,
+    label_title: str,
+    caption: str,
+    label: str,
+    rows: list[dict[str, str]],
+) -> None:
+    headings = [
+        label_title,
+        r"\# Crash",
+        "Codex Crash PoC",
+        "Kimi Crash PoC",
+        r"\# Codex Full",
+        r"\# Codex Scored",
+        "Codex Full PoC",
+        "Codex Exploit",
+        "Codex LLM Fail",
+        "Codex Missing Fail",
+        "Codex Error Fail",
+        r"\# Kimi Full",
+        r"\# Kimi Scored",
+        "Kimi Full PoC",
+        "Kimi Exploit",
+        "Kimi LLM Fail",
+        "Kimi Missing Fail",
+        "Kimi Error Fail",
+    ]
+    keys = [label_key, *BREAKDOWN_FIELDNAMES]
+
+    def line(cells: list[str]) -> str:
+        return " & ".join(tex_escape(cell) for cell in cells) + r" \\" + "\n"
+
+    text = (
+        "\\begin{table*}[t]\n"
+        "\\centering\n"
+        "\\small\n"
+        f"\\caption{{{caption}}}\n"
+        f"\\label{{{label}}}\n"
+        "\\resizebox{\\textwidth}{!}{%\n"
+        f"\\begin{{tabular}}{{{'l' + 'r' * (len(headings) - 1)}}}\n"
+        "\\hline\n"
+    )
+    text += line(headings) + "\\hline\n"
+    text += "".join(line([row[key] for key in keys]) for row in rows)
+    text += "\\hline\n\\end{tabular}%\n}\n\\end{table*}\n"
+    path.write_text(text)
+
+
+def write_breakdown_outputs(
+    metadata_rows: list[dict[str, str]],
+    source_rows_by_key: dict[tuple[str, str], list[dict[str, str]]],
+) -> dict[str, list[dict[str, str]]]:
+    category_rows = build_breakdown_rows(
+        "category", "vulnerability_class", metadata_rows, source_rows_by_key
+    )
+    difficulty_rows = build_breakdown_rows(
+        "difficulty", "difficulty_label", metadata_rows, source_rows_by_key
+    )
+    write_breakdown_csv(CATEGORY_CSV, "category", category_rows)
+    write_breakdown_csv(DIFFICULTY_CSV, "difficulty", difficulty_rows)
+
+    criteria = (
+        "Crash-only and full-exploitation rates both use the 100-sample "
+        "dataset for each agent. Full-evaluation samples exceeding 1000 LLM "
+        "calls, missing/running samples, and evaluation errors count as failures."
+    )
+    write_breakdown_tex(
+        CATEGORY_TEX,
+        "category",
+        "Category",
+        f"Final CybinGym results by category. {criteria}",
+        "tab:current-category-results",
+        category_rows,
+    )
+    write_breakdown_tex(
+        DIFFICULTY_TEX,
+        "difficulty",
+        "Difficulty",
+        f"Final CybinGym results by difficulty. {criteria}",
+        "tab:current-difficulty-results",
+        difficulty_rows,
+    )
+    return {
+        "category": category_rows,
+        "difficulty": difficulty_rows,
+    }
+
+
 def tex_escape(value: object) -> str:
     return str(value).replace("%", r"\%").replace("_", r"\_")
 
@@ -796,6 +1002,16 @@ def selected_source_counts(rows: list[dict[str, str]]) -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
+def cleanup_superseded_reports() -> list[str]:
+    removed: list[str] = []
+    for path in SUPERSEDED_REPORT_FILES:
+        if not path.exists():
+            continue
+        path.unlink()
+        removed.append(str(path))
+    return removed
+
+
 def main() -> None:
     all_input_paths = [DATASET100, OVERALL_CSV, MANIFEST_JSON]
     for paths in CSV_SOURCES.values():
@@ -827,6 +1043,9 @@ def main() -> None:
         if key in source_rows_by_key:
             update_summary_row(row, row["task_type"], source_rows_by_key[key])
 
+    breakdown_rows = write_breakdown_outputs(metadata_rows, source_rows_by_key)
+    removed_report_files = cleanup_superseded_reports()
+
     fieldnames = [
         column for column in overall_rows[0]
         if column not in AGGREGATE_COLUMNS
@@ -848,6 +1067,27 @@ def main() -> None:
             "overall_eval_source_paths": [str(path) for path in EVAL_SOURCE_PATHS],
         }
     )
+    manifest.setdefault("outputs", {}).update(
+        {
+            "category_csv": str(CATEGORY_CSV),
+            "category_tex": str(CATEGORY_TEX),
+            "difficulty_csv": str(DIFFICULTY_CSV),
+            "difficulty_tex": str(DIFFICULTY_TEX),
+            "overall_csv": str(OVERALL_CSV),
+            "overall_tex": str(OVERALL_TEX),
+        }
+    )
+    for removed_key in [
+        "category_results_additional",
+        "category_results_additional_tex",
+        "difficulty_results_additional",
+        "difficulty_results_additional_tex",
+        "category_results_codex_full100",
+        "category_results_codex_full100_tex",
+        "difficulty_results_codex_full100",
+        "difficulty_results_codex_full100_tex",
+    ]:
+        manifest.get("outputs", {}).pop(removed_key, None)
     manifest.setdefault("criteria", {}).update(
         {
             "full_evaluation_tasks_by_agent": {
@@ -887,6 +1127,15 @@ def main() -> None:
             f"{task_type}:{agent}": selected_source_counts(rows)
             for (task_type, agent), rows in source_rows_by_key.items()
         },
+        "breakdown_outputs": {
+            "category_csv": str(CATEGORY_CSV),
+            "category_tex": str(CATEGORY_TEX),
+            "difficulty_csv": str(DIFFICULTY_CSV),
+            "difficulty_tex": str(DIFFICULTY_TEX),
+            "category_rows": breakdown_rows["category"],
+            "difficulty_rows": breakdown_rows["difficulty"],
+        },
+        "removed_superseded_report_files": removed_report_files,
         "codex_full100": next(
             row for row in overall_rows if row["task_type"] == "full" and row["agent"] == "OpenAI Codex"
         ),

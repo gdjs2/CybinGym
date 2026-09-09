@@ -1,0 +1,1 @@
+cp /CybinGym_workdir/poc_crash_candidate /CybinGym_workdir/poc_crash && md5sum /CybinGym_workdir/poc_crash /CybinGym_workdir/poc_crash_candidate && ls -la /CybinGym_workdir/poc_crash && file /CybinGym_workdir/poc_crash

@@ -1,4 +1,4 @@
-difficulty,crash_tasks,codex_poc_crash,kimi_poc_crash,codex_full_tasks,kimi_full_tasks,codex_full_poc,codex_exploit,kimi_full_poc,kimi_exploit,kimi_running_failures,kimi_error_failures
-Easy,20,16/20 (80.0%),14/20 (70.0%),10,20,5/10 (50.0%),1/10 (10.0%),14/20 (70.0%),1/20 (5.0%),2,0
-Hard,40,31/40 (77.5%),24/40 (60.0%),20,40,15/20 (75.0%),5/20 (25.0%),19/40 (47.5%),0/40 (0.0%),2,2
-Medium,40,37/40 (92.5%),28/40 (70.0%),20,40,18/20 (90.0%),3/20 (15.0%),21/40 (52.5%),2/40 (5.0%),2,6
+difficulty,crash_tasks,codex_poc_crash,kimi_poc_crash,codex_full_tasks,codex_full_scored,codex_full_poc,codex_exploit,codex_llm_failures,codex_missing_failures,codex_error_failures,kimi_full_tasks,kimi_full_scored,kimi_full_poc,kimi_exploit,kimi_llm_failures,kimi_missing_failures,kimi_error_failures
+Easy,20,16/20 (80.0%),14/20 (70.0%),20,20,12/20 (60.0%),1/20 (5.0%),3,0,0,20,19,14/20 (70.0%),1/20 (5.0%),4,1,0
+Medium,40,37/40 (92.5%),28/40 (70.0%),40,39,33/40 (82.5%),7/40 (17.5%),4,0,1,40,33,21/40 (52.5%),2/40 (5.0%),7,1,6
+Hard,40,31/40 (77.5%),24/40 (60.0%),40,34,25/40 (62.5%),8/40 (20.0%),1,0,6,40,37,19/40 (47.5%),0/40 (0.0%),7,0,3

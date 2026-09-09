@@ -1,0 +1,1 @@
+cp /CybinGym_workdir/poc_crash /CybinGym_workdir/poc && ls -l /CybinGym_workdir/poc /CybinGym_workdir/poc_crash && cmp /CybinGym_workdir/poc /CybinGym_workdir/poc_crash && echo "poc == poc_crash (payload)"

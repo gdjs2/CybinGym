@@ -15,12 +15,12 @@ and Kimi Code.
 | Full | Codex | 100 | 70 (70%) | 16 (16%) |
 | Full | Kimi Code | 100 | 54 (54%) | 3 (3%) |
 
-The category and difficulty tables provide separate task counts for each agent.
-The addendum tables, `category_results_additional.tex` and
-`difficulty_results_additional.tex`, show the previous 50-sample Kimi full run,
-the additional 50-sample batch, and the integrated 100-sample total side by
-side. The original 50-row Kimi report can still be compared with Codex on their
-shared subset.
+The category and difficulty tables are final 100-sample breakdowns for both
+agents. They include crash-only PoC rates, full-exploitation PoC and exploit
+rates, scored-row counts, and LLM-call, missing/running, and evaluation-error
+failure counts. The older Kimi addendum and Codex-only split category/difficulty
+CSV/TeX reports were removed because their information is superseded by the
+final 100-sample tables and manifest provenance.
 
 Full-evaluation samples exceeding 1,000 LLM calls count as failures. The combined
 Codex full row has 93 scored samples and seven evaluation errors; its raw PoC
@@ -49,14 +49,19 @@ imputed for missing/running rows. Pricing follows
 tokens, input tokens, output tokens, and cached-read tokens.
 
 `manifest.json` records source provenance, archive SHA-256 values, scoring
-rules, and output paths. `reported_execution_traces/full_kimi_kimi-k3` contains
-the 94 available traces and matching combined-report rows.
-`reported_execution_traces/full_source_logs` records the source archive paths.
-The older `execution_traces` directory remains a historical export.
+rules, output paths, and reported trace-export status.
+`reported_execution_traces` contains four final trace sets with 400 reported
+rows total. It has extracted `sample_trace.json` trajectories for 398 rows; the
+only non-extractable rows are Kimi full samples 10574 and 17778, which are
+declared in the source `.eval` metadata but absent from the archive's sample and
+summary records. `reported_execution_traces/full_source_logs` records the source
+archive paths. The older `execution_traces` directory remains a historical
+export.
 
 To reproduce the integration from the repository root:
 
 ```sh
 .venv/bin/python scripts/integrate_kimi_current_results.py
 .venv/bin/python scripts/integrate_full100_overall_results.py
+.venv/bin/python scripts/export_current_reported_traces.py
 ```

@@ -1,0 +1,1 @@
+/s 240 string def 0 1 239{s exch 1 put}for[/Separation s/DeviceCMYK{dup dup dup}]setcolorspace showpage

@@ -9,6 +9,8 @@ from scorer import run_docker_validation
 from solvers.prompts import (
     crash_prompt,
     exploit_prompt,
+    exploit_prompt_no_patched_binary,
+    exploit_prompt_no_patched_binary_no_vulnerability_description,
     exploit_prompt_no_vulnerability_description,
 )
 
@@ -190,6 +192,7 @@ def _prompt_for_level(
     evaluation_level: str,
     *,
     include_vulnerability_description: bool = True,
+    include_patched_binary: bool = True,
 ) -> str:
     normalized = _normalize_evaluation_level(evaluation_level)
     if normalized == "crash":
@@ -198,22 +201,33 @@ def _prompt_for_level(
                 "include_vulnerability_description=False is supported only "
                 "for evaluation_level='full'"
             )
+        if not include_patched_binary:
+            raise ValueError(
+                "include_patched_binary=False is supported only "
+                "for evaluation_level='full'"
+            )
         return crash_prompt
-    if include_vulnerability_description:
+    if include_vulnerability_description and include_patched_binary:
         return exploit_prompt
-    return exploit_prompt_no_vulnerability_description
+    if not include_vulnerability_description and include_patched_binary:
+        return exploit_prompt_no_vulnerability_description
+    if include_vulnerability_description and not include_patched_binary:
+        return exploit_prompt_no_patched_binary
+    return exploit_prompt_no_patched_binary_no_vulnerability_description
 
 
 def claude_code_solver(
     evaluation_level: str = "full",
     *,
     include_vulnerability_description: bool = True,
+    include_patched_binary: bool = True,
 ) -> list[Solver | Agent]:
     return [
         configure_cli_evaluation(
             _prompt_for_level(
                 evaluation_level,
                 include_vulnerability_description=include_vulnerability_description,
+                include_patched_binary=include_patched_binary,
             ),
             evaluation_level,
         ),
@@ -229,12 +243,14 @@ def codex_cli_solver(
     evaluation_level: str = "full",
     *,
     include_vulnerability_description: bool = True,
+    include_patched_binary: bool = True,
 ) -> list[Solver | Agent]:
     return [
         configure_cli_evaluation(
             _prompt_for_level(
                 evaluation_level,
                 include_vulnerability_description=include_vulnerability_description,
+                include_patched_binary=include_patched_binary,
             ),
             evaluation_level,
         ),
@@ -253,12 +269,14 @@ def kimi_code_solver(
     evaluation_level: str = "full",
     *,
     include_vulnerability_description: bool = True,
+    include_patched_binary: bool = True,
 ) -> list[Solver | Agent]:
     return [
         configure_cli_evaluation(
             _prompt_for_level(
                 evaluation_level,
                 include_vulnerability_description=include_vulnerability_description,
+                include_patched_binary=include_patched_binary,
             ),
             evaluation_level,
         ),

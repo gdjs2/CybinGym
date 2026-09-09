@@ -1,16 +1,16 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Current results by difficulty. Crash-only rates use 100 binaries per agent; full rates use 50 binaries for Codex and 100 for Kimi, with each cell showing its own denominator. Full-evaluation runs with more than 1000 LLM calls are counted as failures. Kimi's six previously missing or running samples and eight additional-batch evaluation errors are also counted as failures.}
+\caption{Final CybinGym results by difficulty. Crash-only and full-exploitation rates both use the 100-sample dataset for each agent. Full-evaluation samples exceeding 1000 LLM calls, missing/running samples, and evaluation errors count as failures.}
 \label{tab:current-difficulty-results}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{lrrrrrrrrrrr}
+\begin{tabular}{lrrrrrrrrrrrrrrrrr}
 \hline
-Difficulty & \# Crash & Codex PoC & Kimi PoC & \# Codex Full & Codex Full PoC & Codex Exploit & \# Kimi Full & Kimi Full PoC & Kimi Exploit & Kimi Missing Fail & Kimi Error Fail \\
+Difficulty & \# Crash & Codex Crash PoC & Kimi Crash PoC & \# Codex Full & \# Codex Scored & Codex Full PoC & Codex Exploit & Codex LLM Fail & Codex Missing Fail & Codex Error Fail & \# Kimi Full & \# Kimi Scored & Kimi Full PoC & Kimi Exploit & Kimi LLM Fail & Kimi Missing Fail & Kimi Error Fail \\
 \hline
-Easy & 20 & 16/20 (80.0\%) & 14/20 (70.0\%) & 10 & 5/10 (50.0\%) & 1/10 (10.0\%) & 20 & 14/20 (70.0\%) & 1/20 (5.0\%) & 2 & 0 \\
-Hard & 40 & 31/40 (77.5\%) & 24/40 (60.0\%) & 20 & 15/20 (75.0\%) & 5/20 (25.0\%) & 40 & 19/40 (47.5\%) & 0/40 (0.0\%) & 2 & 2 \\
-Medium & 40 & 37/40 (92.5\%) & 28/40 (70.0\%) & 20 & 18/20 (90.0\%) & 3/20 (15.0\%) & 40 & 21/40 (52.5\%) & 2/40 (5.0\%) & 2 & 6 \\
+Easy & 20 & 16/20 (80.0\%) & 14/20 (70.0\%) & 20 & 20 & 12/20 (60.0\%) & 1/20 (5.0\%) & 3 & 0 & 0 & 20 & 19 & 14/20 (70.0\%) & 1/20 (5.0\%) & 4 & 1 & 0 \\
+Medium & 40 & 37/40 (92.5\%) & 28/40 (70.0\%) & 40 & 39 & 33/40 (82.5\%) & 7/40 (17.5\%) & 4 & 0 & 1 & 40 & 33 & 21/40 (52.5\%) & 2/40 (5.0\%) & 7 & 1 & 6 \\
+Hard & 40 & 31/40 (77.5\%) & 24/40 (60.0\%) & 40 & 34 & 25/40 (62.5\%) & 8/40 (20.0\%) & 1 & 0 & 6 & 40 & 37 & 19/40 (47.5\%) & 0/40 (0.0\%) & 7 & 0 & 3 \\
 \hline
 \end{tabular}%
 }

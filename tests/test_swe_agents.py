@@ -1,6 +1,7 @@
 import importlib
 import json
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from solvers import swe_agents
@@ -87,11 +88,47 @@ class SweAgentConfigurationTests(unittest.TestCase):
         self.assertIn("No vulnerability description is provided", prompt)
         self.assertNotIn("desc.txt", prompt)
 
+    def test_full_level_can_select_no_patched_binary_prompt(self):
+        prompts = importlib.import_module("solvers.prompts")
+        prompt = swe_agents._prompt_for_level(
+            "full",
+            include_patched_binary=False,
+        )
+
+        self.assertIs(prompt, prompts.exploit_prompt_no_patched_binary)
+        self.assertIn("provided vulnerable binary", prompt)
+        self.assertNotIn("/out-fix", prompt)
+        self.assertNotIn("fixed binary", prompt.lower())
+
+    def test_full_level_can_select_combined_ablation_prompt(self):
+        prompts = importlib.import_module("solvers.prompts")
+        prompt = swe_agents._prompt_for_level(
+            "full",
+            include_vulnerability_description=False,
+            include_patched_binary=False,
+        )
+
+        self.assertIs(
+            prompt,
+            prompts.exploit_prompt_no_patched_binary_no_vulnerability_description,
+        )
+        self.assertIn("No vulnerability description is provided", prompt)
+        self.assertNotIn("desc.txt", prompt)
+        self.assertNotIn("/out-fix", prompt)
+        self.assertNotIn("fixed binary", prompt.lower())
+
     def test_no_description_prompt_rejects_crash_level(self):
         with self.assertRaisesRegex(ValueError, "evaluation_level='full'"):
             swe_agents._prompt_for_level(
                 "crash",
                 include_vulnerability_description=False,
+            )
+
+    def test_no_patched_binary_prompt_rejects_crash_level(self):
+        with self.assertRaisesRegex(ValueError, "evaluation_level='full'"):
+            swe_agents._prompt_for_level(
+                "crash",
+                include_patched_binary=False,
             )
 
 
@@ -163,15 +200,17 @@ class KimiSolverSelectionTests(unittest.TestCase):
                 opensage_extend_from_run_dir="",
                 opensage_base_port=20000,
                 opensage_port_stride=10,
-                evaluation_level="crash",
+                evaluation_level="full",
                 include_vulnerability_description=True,
+                include_patched_binary=False,
             )
 
         self.assertIs(selected, sentinel)
         solver.assert_called_once_with(
             version="0.29.0",
-            evaluation_level="crash",
+            evaluation_level="full",
             include_vulnerability_description=True,
+            include_patched_binary=False,
         )
 
 
@@ -198,6 +237,23 @@ class EvaluationLevelTests(unittest.TestCase):
                 include_vulnerability_description=False,
             )
 
+    def test_no_patched_binary_rejects_non_cli_agents_before_dataset_load(self):
+        cybingym_module = importlib.import_module("cybingym")
+        with self.assertRaisesRegex(ValueError, "CLI agent types"):
+            cybingym_module.cybingym(
+                agent_type="basic",
+                include_patched_binary=False,
+            )
+
+    def test_no_patched_binary_rejects_crash_level(self):
+        cybingym_module = importlib.import_module("cybingym")
+        with self.assertRaisesRegex(ValueError, "evaluation_level='full'"):
+            cybingym_module.cybingym(
+                agent_type="codex",
+                evaluation_level="crash",
+                include_patched_binary=False,
+            )
+
     def test_no_description_file_filter_omits_desc_txt(self):
         cybingym_module = importlib.import_module("cybingym")
 
@@ -214,6 +270,32 @@ class EvaluationLevelTests(unittest.TestCase):
             )
         )
 
+    def test_no_patched_binary_derives_vulnerable_only_analysis_image(self):
+        cybingym_module = importlib.import_module("cybingym")
+
+        image = cybingym_module._analysis_image_for_patched_binary(
+            {
+                "id": "11256",
+                "metadata": {"analysis_image": "lambangaw/cybingym:11256-merge"},
+            },
+            include_patched_binary=False,
+        )
+
+        self.assertEqual(image, "lambangaw/cybingym:11256-vul")
+
+    def test_patched_binary_image_uses_dataset_analysis_image(self):
+        cybingym_module = importlib.import_module("cybingym")
+
+        image = cybingym_module._analysis_image_for_patched_binary(
+            {
+                "id": "11256",
+                "metadata": {"analysis_image": "custom/image:tag"},
+            },
+            include_patched_binary=True,
+        )
+
+        self.assertEqual(image, "custom/image:tag")
+
     def test_crash_sample_omits_victim_service(self):
         cybingym_module = importlib.import_module("cybingym")
         sample = cybingym_module.create_binary_sample(
@@ -223,6 +305,20 @@ class EvaluationLevelTests(unittest.TestCase):
         )
         services = sample.sandbox.config.services
         self.assertEqual(set(services), {"default", "target", "proxy"})
+
+    def test_no_patched_binary_sample_omits_out_fix_copy(self):
+        cybingym_module = importlib.import_module("cybingym")
+        sample = cybingym_module.create_binary_sample(
+            prompt="prompt",
+            prebuilt_base_image="base-image",
+            evaluation_level="full",
+            include_patched_binary=False,
+        )
+        build_context = Path(sample.sandbox.config.services["default"].build.context)
+        dockerfile_default = (build_context / "Dockerfile.default").read_text()
+
+        self.assertIn("COPY --from=base-image /out-vul /out-vul", dockerfile_default)
+        self.assertNotIn("/out-fix", dockerfile_default)
 
     def test_full_sample_includes_victim_service(self):
         cybingym_module = importlib.import_module("cybingym")

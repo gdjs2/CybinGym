@@ -1,7 +1,3 @@
-id,task_id,entry_name,agent_type,model,reported_task_type,effective_failure_reason
-10574,user:b1c7dad0d036,cybergym/arvo_10574,kimi_code,moonshot/kimi-k3,full,missing_or_running
-12173,user:a48e62bc32ac,cybergym/arvo_12173,kimi_code,moonshot/kimi-k3,full,missing_or_running
-17778,user:7c1cc71dc771,cybergym/arvo_17778,kimi_code,moonshot/kimi-k3,full,missing_or_running
-20694,user:1757197b4fcf,cybergym/arvo_20694,kimi_code,moonshot/kimi-k3,full,missing_or_running
-46279,user:62b27d7ea18c,cybergym/arvo_46279,kimi_code,moonshot/kimi-k3,full,missing_or_running
-46309,user:b0e2ad90f119,cybergym/arvo_46309,kimi_code,moonshot/kimi-k3,full,missing_or_running
+task_type,agent,id,task_id,entry_name,selected_source,sample_status,effective_failure_reason
+full,Kimi Code,10574,user:b1c7dad0d036,cybergym/arvo_10574,reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval,missing_or_running,declared_in_eval_missing_summary;missing_or_running
+full,Kimi Code,17778,user:7c1cc71dc771,cybergym/arvo_17778,reports/current_results/reported_execution_traces/full_source_logs/153487198771__2026-08-30T14-41-15-00-00_cybingym_o6yZBuhrAp5BbCDewHJGMy.eval,missing_or_running,declared_in_eval_missing_summary;missing_or_running

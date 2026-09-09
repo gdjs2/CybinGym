@@ -363,7 +363,7 @@ def write_manifest(output_root: Path, results: list[ExportResult]) -> None:
     _write_json(output_root / MANIFEST_JSON_NAME, rows)
     fieldnames = list(ExportResult.__dataclass_fields__.keys())
     with (output_root / MANIFEST_CSV_NAME).open("w", newline="", encoding="utf-8") as output_file:
-        writer = csv.DictWriter(output_file, fieldnames=fieldnames)
+        writer = csv.DictWriter(output_file, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
